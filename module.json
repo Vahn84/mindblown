@@ -1,0 +1,47 @@
+{
+	"name": "mindblown",
+	"title": "Mindblown",
+	"description": "A module that expands theater of the mind implementations in Foundry VTT.",
+	"authors": [
+		{
+			"name": "Vahn"
+		}
+	],
+	"version": "0.1.0",
+	"compatibility": {
+		"minimum": "10",
+		"verified": "12.331"
+	},
+	"relationships": {
+		"requires": [
+			{
+				"id": "lib-wrapper",
+				"type": "module",
+				"compatibility": {
+					"minimum": "1.0.0.0",
+					"verified": "1.12.6.0"
+				}
+			},
+			{
+				"id": "tagger",
+				"type": "module",
+				"compatibility": {}
+			},
+			{
+				"id": "tokenmagic",
+				"type": "module",
+				"compatibility": {
+					"verified": "0.6.8"
+				}
+			}
+		]
+	},
+	"languages": [
+		{
+			"lang": "en",
+			"name": "English",
+			"path": "languages/en.json"
+		}
+	],
+	"scripts": ["scripts/init.js"]
+}

@@ -1,0 +1,14 @@
+<!-- Tile Buttons -->
+<div class='mindblown stage-buttons-container'>
+	<div class='mindblown button-grid'>
+		{{#each favourites as |fav|}}
+			<div
+				id='mbStage-img-{{id}}'
+				style="background: url('{{path.img}}') no-repeat center; background-size:cover; width: 100px; height: 85px;"
+			></div>
+		{{/each}}
+	</div>
+	<hr
+		style='margin: 10px 0; border-top: 1px solid var(--color-border-light-primary); border-bottom: 1px solid var(--color-border-light-primary);'
+	/>
+</div>
