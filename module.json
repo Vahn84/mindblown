@@ -1,4 +1,5 @@
 {
+	"id": "mindblown",
 	"name": "mindblown",
 	"title": "Mindblown",
 	"description": "A module that expands theater of the mind implementations in Foundry VTT.",
@@ -7,6 +8,7 @@
 			"name": "Vahn"
 		}
 	],
+	"socket": true,
 	"version": "0.1.0",
 	"compatibility": {
 		"minimum": "10",
@@ -43,5 +45,17 @@
 			"path": "languages/en.json"
 		}
 	],
-	"scripts": ["scripts/init.js"]
+	"scripts": [
+		"scripts/mindblown.js",
+		"scripts/setup.js",
+		"scripts/utilities.js",
+		"scripts/stage.js",
+		"scripts/config.js",
+		"scripts/canvas-handler.js"
+	],
+	"esmodules": ["scripts/init.js"],
+	"url": "",
+	"manifest": "",
+	"download": "",
+	"media": []
 }
