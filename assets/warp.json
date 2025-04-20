@@ -1,0 +1,69 @@
+{
+	"behaviours": [
+		{
+			"enabled": true,
+			"priority": 10000,
+			"maxLifeTime": 10000000,
+			"timeVariance": 0,
+			"name": "LifeBehaviour"
+		},
+		{
+			"enabled": true,
+			"priority": 200,
+			"sizeStart": { "x": 0.2, "y": 0.2 },
+			"sizeEnd": { "x": 0, "y": 0 },
+			"startVariance": 0.1,
+			"endVariance": 0,
+			"maxSize": { "x": 2, "y": 2 },
+			"uniformScaling": true,
+			"xScalingFunction": "linear",
+			"yScalingFunction": "linear",
+			"name": "SizeBehaviour"
+		},
+		{
+			"enabled": true,
+			"priority": 100,
+			"trailingEnabled": false,
+			"spawnAlongTrail": false,
+			"trailSpeed": 1,
+			"trailRepeat": true,
+			"trailStart": 0,
+			"customPoints": [
+				{
+					"spawnType": "Ring",
+					"radius": 10,
+					"position": { "x": 0, "y": 0 },
+					"positionVariance": { "x": 70, "y": 70 }
+				}
+			],
+			"name": "SpawnBehaviour"
+		},
+		{
+			"enabled": true,
+			"priority": 100,
+			"warp": true,
+			"positionVariance": { "x": 100, "y": 100 },
+			"velocity": { "x": 0, "y": 0 },
+			"velocityVariance": { "x": 0, "y": 0 },
+			"acceleration": { "x": 0, "y": 0 },
+			"accelerationVariance": { "x": 0, "y": 0 },
+			"warpSpeed": 0.010483,
+			"warpBaseSpeed": 0.005,
+			"cameraZConverter": 5,
+			"warpFov": 20,
+			"warpStretch": 5,
+			"warpDistanceScaleConverter": 5,
+			"warpDistanceToCenter": false,
+			"name": "PositionBehaviour"
+		}
+	],
+	"emitController": {
+		"_maxParticles": 1000,
+		"_emissionRate": "1011111",
+		"name": "RandomEmission"
+	},
+	"duration": -1,
+	"alpha": 1,
+	"anchor": { "x": 0.5, "y": 0.5 },
+	"blendMode": 0
+}

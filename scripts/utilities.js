@@ -1,5 +1,11 @@
-export const logger = (message) => {
-	console.log(`Mindblown | ${message}`);
+import config from './config.js';
+
+export const logger = (...args) => {
+	if (!config.DEBUG) return;
+
+	args.forEach((arg) => {
+		console.log(`Mindblown`, arg);
+	});
 };
 
 export const isImage = (path) => /\.(png|jpg|jpeg|webp)$/i.test(path);

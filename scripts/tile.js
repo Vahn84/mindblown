@@ -1,3 +1,6 @@
+import { logger } from './utilities.js';
+import { isImage, isVideo } from './utilities.js';
+
 export const MediaType = {
 	IMAGE: 'IMAGE',
 	VIDEO: 'VIDEO',
@@ -11,22 +14,30 @@ export const TyleType = {
 };
 
 export class Tile {
-	id: any;
-	name: string;
-	path: string;
-	mute: boolean;
-	loop: boolean;
-	mediaType: MediaType;
-	tileType: TyleType;
-	coords: any;
-	category: string;
+	// id: any;
+	// name: string;
+	// path: string;
+	// mute: boolean;
+	// loop: boolean;
+	// mediaType: MediaType;
+	// tileType: TyleType;
+	// coords: any;
+	// category: string;
 
-	constructor(args) {
-		const { id, name, path, mute, loop, category, tileType, coords } = args;
+	constructor(
+		name,
+		path,
+		tileType = TyleType.BG,
+		mute = false,
+		loop = false,
+		category = null,
+		coords = null
+	) {
 		this.id = `t_${new Date().getTime()}`;
 		this.name = name || null;
 		this.path = path || null;
 		this.mute = mute || false;
+		this.tileType = tileType;
 		this.loop = loop || false;
 		this.category = null;
 		this.mediaType = this.path

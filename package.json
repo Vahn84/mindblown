@@ -1,0 +1,9 @@
+{
+	"name": "mindblown",
+	"version": "0.1.0",
+	"description": "A module to easily share media to players",
+	"author": "Vahn",
+	"dependencies": {
+		"custom-pixi-particles": "^4.19.3"
+	}
+}
