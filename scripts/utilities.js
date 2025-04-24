@@ -8,5 +8,15 @@ export const logger = (...args) => {
 	});
 };
 
+export const errorLogger = (...args) => {
+	if (!config.DEBUG) return;
+
+	args.forEach((arg) => {
+		console.error(`Mindblown`, arg);
+	});
+};
+
 export const isImage = (path) => /\.(png|jpg|jpeg|webp)$/i.test(path);
 export const isVideo = (path) => /\.(mp4|webm)$/i.test(path);
+
+export const IS_GM = () => game.user.isGM;

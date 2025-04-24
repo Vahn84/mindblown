@@ -1,0 +1,99 @@
+{
+	"behaviours": [
+		{
+			"enabled": true,
+			"priority": 10000,
+			"maxLifeTime": 1,
+			"timeVariance": 0.5,
+			"name": "LifeBehaviour"
+		},
+		{
+			"enabled": true,
+			"priority": 100,
+			"trailingEnabled": false,
+			"spawnAlongTrail": false,
+			"trailSpeed": 1,
+			"trailRepeat": true,
+			"trailStart": 0,
+			"customPoints": [
+				{
+					"spawnType": "Ring",
+					"radius": 0,
+					"position": { "x": 20, "y": 174 },
+					"positionVariance": { "x": 82, "y": -100 }
+				}
+			],
+			"name": "SpawnBehaviour"
+		},
+		{
+			"enabled": true,
+			"priority": 100,
+			"velocity": { "x": 60, "y": -100 },
+			"velocityVariance": { "x": 0, "y": 50 },
+			"acceleration": { "x": 60, "y": -100 },
+			"accelerationVariance": { "x": 0, "y": 0 },
+			"name": "PositionBehaviour"
+		},
+		{
+			"enabled": true,
+			"priority": 0,
+			"sizeStart": { "x": 0.7, "y": 0.7 },
+			"sizeEnd": { "x": 0.3, "y": 0.3 },
+			"startVariance": 0.3,
+			"endVariance": 0.3,
+			"maxSize": { "x": 2, "y": 2 },
+			"uniformScaling": true,
+			"xScalingFunction": "linear",
+			"yScalingFunction": "linear",
+			"name": "SizeBehaviour"
+		},
+		{
+			"enabled": true,
+			"priority": 0,
+			"start": { "_r": 209, "_g": 98, "_b": 14, "_alpha": 1},
+			"end": { "_r": 0, "_g": 0, "_b": 0, "_alpha": 0 },
+			"startVariance": { "_r": 0, "_g": 0, "_b": 0, "_alpha": 0 },
+			"endVariance": { "_r": 0, "_g": 0, "_b": 0, "_alpha": 0 },
+			"name": "ColorBehaviour"
+		},
+		{
+			"enabled": true,
+			"priority": 0,
+			"rotation": 2,
+			"variance": 3,
+			"clockwise": true,
+			"name": "RotationBehaviour"
+		},
+		{
+			"enabled": true,
+			"priority": 0,
+			"angle": 0.5,
+			"variance": 0,
+			"name": "EmitDirectionBehaviour"
+		},
+		{
+			"enabled": true,
+			"priority": 0,
+			"position": { "x": 100, "y": 150 },
+			"positionVariance": { "x": -100, "y": 0 },
+			"velocity": { "x": -80, "y": -100 },
+			"velocityVariance": { "x": 100, "y": 50 },
+			"acceleration": { "x": 0, "y": -100 },
+			"accelerationVariance": { "x": 0, "y": 0 },
+			"sizeStart": { "x": 2, "y": 2 },
+			"sizeEnd": { "x": 1, "y": 1 },
+			"startVariance": 0,
+			"endVariance": 0,
+			"emitPerSecond": 50,
+			"duration": 0,
+			"maxLifeTime": 2,
+			"effect": 4,
+			"name": "TurbulenceBehaviour"
+		}
+	],
+	"emitController": { "_emitPerSecond": 300, "name": "UniformEmission" },
+	"duration": -1,
+	"alpha": 1,
+	"anchor": { "x": 0, "y": 0 },
+	"blendMode": 1
+}

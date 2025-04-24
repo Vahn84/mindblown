@@ -2,10 +2,19 @@ import { Tile, TyleType } from './tile.js';
 import { logger } from './utilities.js';
 
 export class Stage {
-	constructor(name = 'Stage') {
-		this.name = name;
-        this.bg = null;
+	constructor(bg) {
+		
+        this.bg = bg || null;
+		this.category = this.bg?.category || null;
+		this.id = `stage_${this.name}`;
+		this.npcs = [];
+		this.items = [];
+		this.vfx = [];
         
+	}
+
+	isChildTileImage() {
+		return this.bg?.mediaType === Tile.MediaType.IMAGE;
 	}
 
 	setBg(tile) {

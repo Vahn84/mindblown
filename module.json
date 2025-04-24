@@ -48,16 +48,17 @@
 	],
 	"styles": ["styles/mindblown.css"],
 	"scripts": [
-		"lib/particle-emitter.min.js"
+		"lib/custom-pixi-particles.umd.js"
 	],
 
 	"esmodules": [
-		"scripts/canvas-handler.js",
+		"scripts/pixi-handler.js",
 		"scripts/config.js",
 		"scripts/init.js",
 		"scripts/mindblown.js",
 		"scripts/setup.js",
 		"scripts/stage.js",
+		"scripts/stage-manager.js",
 		"scripts/tile.js",
 		"scripts/utilities.js",
 		"scripts/effects.js"

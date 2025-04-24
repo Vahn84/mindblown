@@ -4,6 +4,7 @@ import { isImage, isVideo } from './utilities.js';
 export const MediaType = {
 	IMAGE: 'IMAGE',
 	VIDEO: 'VIDEO',
+	PARTICLES: 'PARTICLES',
 };
 
 export const TyleType = {
@@ -31,9 +32,8 @@ export class Tile {
 		mute = false,
 		loop = false,
 		category = null,
-		coords = null
 	) {
-		this.id = `t_${new Date().getTime()}`;
+		this.id = `tile_${new Date().getTime()}`;
 		this.name = name || null;
 		this.path = path || null;
 		this.mute = mute || false;
@@ -45,8 +45,8 @@ export class Tile {
 				? MediaType.IMAGE
 				: isVideo(this.path)
 				? MediaType.VIDEO
-				: null
+				: MediaType.PARTICLES
 			: null;
-		this.coords = coords || { x: 0, y: 0 };
+		
 	}
 }

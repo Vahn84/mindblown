@@ -1,8 +1,8 @@
-import { createContainer } from './canvas-handler.js';
 import { VFX } from './effects.js';
 import { Stage } from './stage.js';
 import { Tile, TyleType } from './tile.js';
 import { logger } from './utilities.js';
+import { StageManger } from './stage-manager.js';
 
 // import { Stage } from './stage.js';
 
@@ -22,14 +22,17 @@ Hooks.on('ready', () => {
 		event.preventDefault();
 		logger('pixi', PIXI);
 		let path =
-			'worlds/aetherium/tom-scenes/locations/Inemora/Ruined%20Citadel%20Palace.jpg';
+			'worlds/aetherium/tom-scenes/locations/Campsites/Forest%20Campsite.jpg';
 		let bg = new Tile('bg', path);
 		logger('bg', bg, TyleType.BG);
 		let stage = new Stage('Stage');
 		stage.setBg(bg);
-		logger('stage', stage);
-		createContainer(stage);
+		StageManger.shared().setStage(stage);
+		StageManger.shared().initPIXIApp();
+		// logger('stage', stage);
+		// setupPIXIAppBg(stage);
 	});
+
 });
 
 Hooks.once('init', () => {
