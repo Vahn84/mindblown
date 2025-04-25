@@ -1,0 +1,32 @@
+<div class='horizontal-accordion-one'>
+  <span class="refresher" data-tyleType="BG"><i class="fa-solid fa-rotate"></i></span>
+<ul class="accordion-container">
+  {{#each bgs as |category key|}}
+  
+  <li class="accordion-item {{#currentlyPlaying category key tyleTypes.BG}}active{{/currentlyPlaying}}">
+    <div
+      class="accordion-head"
+      style="
+        background: url('{{getFirstPath category}}') center center no-repeat;
+        background-size: cover;
+        background-color: black;
+      "
+    >
+      <span>{{this.name}}</span>
+    </div>
+    {{#each category as |tile index|}}
+    <div class="accordion-data">
+      <div
+        class="accordion-data-stage"
+        style="
+          background: url('{{tile.thumbnail}}') center center no-repeat;
+          background-size: cover;
+          background-color: black;
+        "
+      ></div>
+    </div>
+    {{/each}}
+  </li>
+  {{/each}}
+</ul>
+</div>

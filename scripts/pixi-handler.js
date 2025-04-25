@@ -58,13 +58,8 @@ export class PIXIHandler {
 		return _PIXIApp;
 	}
 
-	static async SetupPIXIAppStage(
-		PIXIApp,
-		bgPath,
-		originalWidth,
-		originalHeight
-	) {
-		const texture = await PIXI.Assets.load(bgPath);
+	static async SetupPIXIAppStage(PIXIApp, bg, originalWidth, originalHeight) {
+		const texture = await PIXI.Assets.load(bg.path);
 
 		const bgSprite = new PIXI.Sprite(texture);
 		const blurryBgSprite = new PIXI.Sprite(texture);
@@ -99,7 +94,7 @@ export class PIXIHandler {
 		PIXIApp.stage.addChild(npcContainer);
 		PIXIApp.stage.addChild(objContainer);
 		PIXIApp.stage.addChild(vfxContainer);
-		
+
 		bgContainer.position.set(0, 0);
 		npcContainer.position.set(0, 0);
 		objContainer.position.set(0, 0);
@@ -256,6 +251,11 @@ export class PIXIHandler {
 
 		vfxContainer.interactive = true;
 		vfxContainer.addChild(wrapper);
+
+		// Add resize handle for GM
+		if (game.user?.isGM) {
+			addResizeHandleToWrapper(wrapper, particles, bgSprite);
+		}
 	}
 
 	static async ResizeStage(PIXIApp, originalWidth, originalHeight) {
@@ -450,6 +450,66 @@ void main() {
 			}
 		});
 	}
+}
 
+// Add resize handle to a wrapper, accounting for background scaling
+function addResizeHandleToWrapper(wrapper, particles, bgSprite) {
+	const handleSize = 16;
 
+	const handle = new PIXI.Graphics();
+	handle
+		.beginFill(0xff0000, 0.6)
+		.drawRect(0, 0, handleSize, handleSize)
+		.endFill();
+
+	handle.cursor = 'nwse-resize';
+	handle.interactive = true;
+	handle.buttonMode = true;
+
+	let dragging = false;
+	let originalSize = null;
+
+	const updateHandlePosition = () => {
+		handle.x = wrapper.width;
+		handle.y = wrapper.height;
+	};
+
+	handle.on('pointerdown', (event) => {
+		dragging = true;
+		handle.dragData = event.data;
+
+		const local = handle.dragData.getLocalPosition(wrapper.parent);
+		const bgScale = bgSprite.width / bgSprite.texture.width;
+
+		originalSize = {
+			x: local.x / (particles.scale.x * bgScale),
+			y: local.y / (particles.scale.y * bgScale),
+		};
+	});
+
+	handle.on('pointerup', () => {
+		dragging = false;
+		handle.dragData = null;
+	});
+	handle.on('pointerupoutside', () => {
+		dragging = false;
+		handle.dragData = null;
+	});
+
+	handle.on('pointermove', () => {
+		if (!dragging) return;
+
+		const newPos = handle.dragData.getLocalPosition(wrapper.parent);
+		const bgScale = bgSprite.width / bgSprite.texture.width;
+
+		const scaleX = Math.max(newPos.x / originalSize.x / bgScale, 0.5);
+		const scaleY = Math.max(newPos.y / originalSize.y / bgScale, 0.5);
+		const uniform = Math.min(scaleX, scaleY);
+
+		particles.scale.set(uniform);
+		updateHandlePosition();
+	});
+
+	wrapper.addChild(handle);
+	updateHandlePosition();
 }

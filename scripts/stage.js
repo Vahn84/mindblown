@@ -1,40 +1,28 @@
-import { Tile, TyleType } from './tile.js';
+import { Tile } from './tile.js';
 import { logger } from './utilities.js';
 
 export class Stage {
+
+
 	constructor(bg) {
-		
-        this.bg = bg || null;
-		this.category = this.bg?.category || null;
-		this.id = `stage_${this.name}`;
-		this.npcs = [];
-		this.items = [];
-		this.vfx = [];
-        
+		this.bg = bg;
+		this.npc = null;
+		this.focus = null;
+		this.vfxs = [];
+		let bgNameAsId = bg.id.split('/').pop();
+		this.id = `stage_${bgNameAsId}`;
+
+
 	}
 
-	isChildTileImage() {
-		return this.bg?.mediaType === Tile.MediaType.IMAGE;
+	setBg(bg) {
+		this.bg = bg.id;
+		this.id = `stage_${bg.id}`;
 	}
 
-	setBg(tile) {
-		if (tile?.tileType === TyleType.BG) {
-			this.bg = tile;
-		}
-		logger(this);
+	addNpc(npc) {
+		this.npcs[0] = { ...CONFIG, npc };
 	}
 
-	addTile(tile) {
-		this.tiles.push(tile);
-	}
-	removeTile(tile) {
-		this.tiles = this.tiles.filter((t) => t !== tile.id);
-	}
 
-	removeAllTiles() {
-		this.tiles = [];
-	}
-	getTiles() {
-		return this.tiles;
-	}
 }

@@ -57,6 +57,10 @@ export class StageManger {
 		return this.stage;
 	}
 
+	getCurrentStage() {
+		return this.stage;
+	}
+
 	async initPIXIApp() {
 		this.PIXIApp = await PIXIHandler.InitPIXIApp(this.PIXIApp);
 		const originalWidth = Math.max(
@@ -69,7 +73,7 @@ export class StageManger {
 		);
 		PIXIHandler.SetupPIXIAppStage(
 			this.PIXIApp,
-			this.stage.bg.path,
+			this.stage.bg,
 			originalWidth,
 			originalHeight
 		);

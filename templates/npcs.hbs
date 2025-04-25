@@ -1,0 +1,31 @@
+<div class='horizontal-accordion-one'>
+<ul class="accordion-container">
+  {{#each stages as |category key|}}
+  
+  <li class="accordion-item {{#if currentlyPlaying category}}active{{/if}}">
+    <div
+      class="accordion-head"
+      style="
+        background: url('{{getFirstPath category}}') center center no-repeat;
+        background-size: cover;
+        background-color: black;
+      "
+    >
+      <span>{{this.name}}</span>
+    </div>
+    {{#each category as |tile index|}}
+    <div class="accordion-data">
+      <div
+        class="accordion-data-stage"
+        style="
+          background: url('{{getPath tile}}') center center no-repeat;
+          background-size: cover;
+          background-color: black;
+        "
+      ></div>
+    </div>
+    {{/each}}
+  </li>
+  {{/each}}
+</ul>
+</div>
