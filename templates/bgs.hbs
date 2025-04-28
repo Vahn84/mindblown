@@ -1,31 +1,47 @@
-<div class='horizontal-accordion-one'>
-  <span class="refresher" data-tyleType="BG"><i class="fa-solid fa-rotate"></i></span>
+{{! prettier-ignore }}
+<div class='mindblown-list mindblown-bgs horizontal-accordion-one'>
+  <div class="mindblown-list-header">
+    <span>STAGES</span>
+    <span>
+      <span class="refresher" data-tileType="{{../tileTypeBG}}">SYNC  <i class="fa-solid fa-rotate"></i></span>
+      <span class="turnOff" data-tileType="{{../tileTypeBG}}">CLOSE  <i class="fa-solid fa-power-off"></i></span>
+      <span class="erase" data-tileType="{{../tileTypeBG}}">RESET BG  <i class="fa-solid fa-eraser"></i></span>
+      <span class="toggleReduce" data-tileType="{{../tileTypeBG}}">MINIMIZE  <i class="fa-solid fa-minimize"></i></span>
+    </span>
+  </div>
+  
 <ul class="accordion-container">
   {{#each bgs as |category key|}}
   
-  <li class="accordion-item {{#currentlyPlaying category key tyleTypes.BG}}active{{/currentlyPlaying}}">
+  <li data-category="{{key}}" data-tileType="{{../tileType.BG}}" class="accordion-item  {{#isActiveCategory ../activeCategories key ../tileType.BG }}active{{/isActiveCategory}}">
     <div
-      class="accordion-head"
+      class="accordion-head mindblown-category"
       style="
         background: url('{{getFirstPath category}}') center center no-repeat;
         background-size: cover;
-        background-color: black;
       "
     >
-      <span>{{this.name}}</span>
+      <div class="mindblown-list-title"><span>{{key}}</span></div>
     </div>
-    {{#each category as |tile index|}}
+    {{#isActiveCategory ../activeCategories key ../tileType.BG }}
     <div class="accordion-data">
-      <div
-        class="accordion-data-stage"
-        style="
-          background: url('{{tile.thumbnail}}') center center no-repeat;
-          background-size: cover;
-          background-color: black;
-        "
-      ></div>
-    </div>
-    {{/each}}
+      {{#each category as |tile index|}}
+      
+        <div
+          class="accordion-data-item"
+          style="
+            background: url('{{tile.thumbnail}}') center center no-repeat;
+            background-size: cover;
+            background-color: black;
+          "
+          data-tileId="{{tile.id}}"
+          data-category="{{key}}"
+          data-index="{{index}}"
+          data-tileType="{{../../tileType.BG}}"
+        ></div>
+      {{/each}}
+      </div>
+    {{/isActiveCategory}}
   </li>
   {{/each}}
 </ul>

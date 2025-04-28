@@ -31,26 +31,52 @@ export async function setupModule() {
 		Handlebars.registerPartial('focus', focus);
 
 		Handlebars.registerHelper(
+			'isActiveCategory',
+			function (activeCategories, category, tileType, options) {
+				if (!activeCategories || !category || !tileType) {
+					return options.inverse(this);
+				}
+
+				const isActive = activeCategories[tileType].find(
+					(item) => item === category
+				);
+
+				logger(
+					'isActiveCategory',
+					activeCategories,
+					category,
+					tileType,
+					isActive
+				);
+				if (isActive) {
+					return options.fn(this); // Render the block
+				} else {
+					return options.inverse(this); // Else block ({{else}})
+				}
+			}
+		);
+
+		Handlebars.registerHelper(
 			'currentlyPlaying',
 			function (array, key, tileType, options) {
-				logger("crrentlyPlaying", array, key, tileType);
+				logger('crrentlyPlaying', array, key, tileType);
 				if (!array || !key) return options.inverse(this);
 				const currentStage = StageManger.shared().getCurrentStage();
 				let isActive = false;
 
 				if (currentStage) {
 					switch (tileType) {
-						case Tile.TyleType.BG:
+						case Tile.TileType.BG:
 							isActive = currentStage.bg?.id === array[key]?.id;
 							break;
-						case Tile.TyleType.NPC:
+						case Tile.TileType.NPC:
 							isActive = currentStage.npc?.id === array[key]?.id;
 							break;
-						case Tile.TyleType.FOCUS:
+						case Tile.TileType.FOCUS:
 							isActive =
 								currentStage.focus?.id === array[key]?.id;
 							break;
-						case Tile.TyleType.VFX:
+						case Tile.TileType.VFX:
 							isActive = currentStage.vfxs?.some(
 								(vfx) => vfx.id === array[key]?.id
 							);

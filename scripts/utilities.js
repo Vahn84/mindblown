@@ -24,6 +24,7 @@ export const isVideo = (path) => /\.(mp4|webm)$/i.test(path);
 export const IS_GM = () => game.user.isGM;
 
 export async function syncMediaDirectory(dirCode, tileType) {
+	let newDataCount = 0;
 	const directoryPath = game.settings.get(CONFIG.MOD_NAME, dirCode);
 	logger('syncMediaDirectory', directoryPath);
 	logger('tileType', tileType);
@@ -71,7 +72,9 @@ export async function syncMediaDirectory(dirCode, tileType) {
 						tiles[category] = [];
 					}
 
-					if (!tiles[category].find((media) => media?.img === path)) {
+					if (
+						!tiles[category].find((_tile) => _tile?.path === path)
+					) {
 						let tile = new Tile(
 							decodeURIComponent(path).split('/').pop(),
 							path,
@@ -91,9 +94,11 @@ export async function syncMediaDirectory(dirCode, tileType) {
 
 								if (thumbnail) {
 									logger('Thumbnail created:', thumbnail);
-									const fileName = `${path
-										.split('/')
-										.pop()}.jpg`;
+									let fileName =
+										decodeURIComponent(path)
+											.split('/')
+											.pop()
+											.replace(/\.[^/.]+$/, '') + '.jpg';
 									const file = await fetch(thumbnail).then(
 										(r) => r.blob()
 									);
@@ -107,10 +112,14 @@ export async function syncMediaDirectory(dirCode, tileType) {
 										{},
 										{}
 									);
-
-									logger('Thumbnail uploaded:', response);
-
-									tile.thumbnail = `worlds/aetherium/video-thumbs/${fileName}`;
+									if (response) {
+										logger('Thumbnail uploaded:', response);
+										tile.thumbnail = response.path;
+									} else {
+										throw new Error(
+											'Thumbnail not uploaded'
+										);
+									}
 								} else {
 									throw new Error('Thumbnail not created');
 								}
@@ -120,12 +129,20 @@ export async function syncMediaDirectory(dirCode, tileType) {
 						}
 
 						tiles[category].push(tile);
+						newDataCount++;
 					}
 				}
 			}
 		}
 	}
 	logger(`New ${tileType} data`, tiles);
+	if (newDataCount === 0) {
+		ui.notifications.info(
+			ui.notifications.info(
+				`No new ${tileType} data found in ${directoryPath}.`
+			)
+		);
+	}
 	game.user.setFlag(CONFIG.MOD_NAME, tileType, tiles);
 	return tiles;
 }

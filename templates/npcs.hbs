@@ -1,31 +1,33 @@
-<div class='horizontal-accordion-one'>
-<ul class="accordion-container">
-  {{#each stages as |category key|}}
-  
-  <li class="accordion-item {{#if currentlyPlaying category}}active{{/if}}">
-    <div
-      class="accordion-head"
-      style="
-        background: url('{{getFirstPath category}}') center center no-repeat;
-        background-size: cover;
-        background-color: black;
-      "
-    >
-      <span>{{this.name}}</span>
-    </div>
-    {{#each category as |tile index|}}
-    <div class="accordion-data">
-      <div
-        class="accordion-data-stage"
-        style="
-          background: url('{{getPath tile}}') center center no-repeat;
-          background-size: cover;
-          background-color: black;
-        "
-      ></div>
-    </div>
-    {{/each}}
-  </li>
-  {{/each}}
-</ul>
+<div class="mindblown-panel-container closed">
+  <div class="mindblown-panel-toggle">
+    <i class="fa-regular fa-face-smile"></i> <!-- The little circle button -->
+  </div>
+
+  <div class="mindblown-panel-content">
+    <ul class="mindblown-accordion">
+      {{#each npcs as |npcList subfolder|}}
+      <li class="mindblown-accordion-item {{#isActiveCategory ../activeCategories subfolder ../tileType.NPC}}open{{/isActiveCategory}}" data-category="{{subfolder}}" data-tileType="{{../tileType.NPC}}">
+        <div class="mindblown-accordion-head">
+          <span>{{subfolder}}</span>
+        </div>
+        {{#isActiveCategory ../activeCategories subfolder ../tileType.NPC}}
+        <div class="mindblown-accordion-body">
+          <div class="mindblown-grid">
+            {{#each npcList as |npc index|}}
+            <div
+              class="mindblown-grid-item"
+              style="background-image: url('{{npc.thumbnail}}'); background-position: top center background-size: cover;"
+              data-tileId="{{npc.id}}"
+              data-category="{{subfolder}}"
+              data-index="{{index}}"
+              data-tileType="{{../../tileType.NPC}}"
+            ></div>
+            {{/each}}
+          </div>
+        </div>
+        {{/isActiveCategory}}
+      </li>
+      {{/each}}
+    </ul>
+  </div>
 </div>

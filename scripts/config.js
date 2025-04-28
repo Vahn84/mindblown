@@ -21,4 +21,12 @@ export default {
 	NPCS_DIR: 'npcsDir',
 	FOCUS_DIR: 'focusDir',
 	ON_AIR: 'onAir',
+	ACTIVE_CATEGORIES: {
+		BG: 'activeBGs',
+		NPC: 'activeNPCs',
+		FOCUS: 'activeFocus',
+	},
+	DEFAULT_SPRITE_FRAME:'modules/mindblown/assets/textures/grey_frame.png',
+	DEFAULT_SPRITE_BG:'modules/mindblown/assets/textures/black-bg.jpg',
+	CURRENT_STAGE: 'currentStage',
 };

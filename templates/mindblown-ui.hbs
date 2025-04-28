@@ -1,7 +1,15 @@
 <div id="mindblown">
     <div class='mindblown-ui'>
-        {{> focus}}
-        {{> npcs}}
+        <div id="columnWrapper" class="mindblown-accordion-column">
+            <div id="npcsWrapper" class="mindblown-accordion-wrapper">
+                {{> npcs}}
+            </div>
+            <div id="focusWrapper" class="mindblown-accordion-wrapper">
+                {{> focus}}
+            </div>
+        </div>
+        <div id="bgsWrapper" class="mindblown-accordion-wrapper">
         {{> bgs}}
+        </div>
     </div>
 </div>

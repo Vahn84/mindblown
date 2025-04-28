@@ -52,6 +52,7 @@
 	],
 
 	"esmodules": [
+		"scripts/event-emitter.js",
 		"scripts/pixi-handler.js",
 		"scripts/config.js",
 		"scripts/init.js",

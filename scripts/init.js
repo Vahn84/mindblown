@@ -11,6 +11,9 @@ import { MindblownUI } from './mindblown.js';
 
 Hooks.on('ready', () => {
 	console.log('Mindblown ready');
+	game.socket.on(CONFIG.MOD_NAME, (data) => {
+		StageManger.shared().SocketSetStageByAction(data);
+	});
 	if (!game.user.isGM) return;
 	initSettings();
 	const trpTaskbar = $('#taskbar');

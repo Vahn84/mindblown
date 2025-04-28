@@ -18,19 +18,19 @@
 
 #mindblown {
 	position: fixed;
-	bottom: 50px !important;
-	top: auto !important;
-	left: 0 !important;
-	width: 100% !important;
-	height: 300px !important;
+	bottom: 50px;
+	top: auto;
+	left: 0;
+	width: 100%;
+	height: auto;
 	box-shadow: none;
 	margin: 0;
 	background: transparent;
-	z-index: 105;
+	z-index: 30;
 }
 #mindblown .mindblown-ui {
-	background: #b7b7b71b !important;
-	backdrop-filter: blur(5px);
+	/* background: #b7b7b71b !important;
+	backdrop-filter: blur(5px); */
 }
 
 #mindblown .mindblown-ui {
@@ -45,6 +45,34 @@ canvas#mbCanvas {
 	height: 100%;
 	z-index: 0;
 	background-color: transparent;
+	transition: opacity 0.5s ease-in-out;
+}
+
+.mindblown-ui .column-wrapper.mindblown-accordion-column {
+	margin: 0 100px;
+}
+.mindblown-ui #bgsWrapper.mindblown-accordion-wrapper {
+	background: #b7b7b71b;
+	backdrop-filter: blur(5px);
+}
+.mindblown-ui #npcsWrapper.mindblown-accordion-wrapper,
+.mindblown-ui #focusWrapper.mindblown-accordion-wrapper {
+	background: #b7b7b71b;
+	backdrop-filter: blur(5px);
+	width: 210px;
+
+	position: absolute;
+	bottom: 150px;
+}
+
+.mindblown-ui #focusWrapper.mindblown-accordion-wrapper {
+	/* display: none; */
+	right: 150px;
+}
+
+.mindblown-ui #npcsWrapper.mindblown-accordion-wrapper {
+	/* display: none; */
+	left: 100px;
 }
 
 .mindblown-ui .horizontal-accordion-one {
@@ -52,9 +80,28 @@ canvas#mbCanvas {
 	display: flex;
 	position: relative;
 	margin: 0 auto;
-	height: 100px;
-	overflow: scroll;
+	height: 75px;
+	overflow: hidden;
+	flex-direction: column;
 }
+
+.mindblown-ui .horizontal-accordion-one.mindblown-bgs {
+	height: 150px;
+}
+
+.mindblown-ui .horizontal-accordion-one .mindblown-list-header {
+	display: flex;
+	justify-content: space-between;
+	background: rgba(19, 19, 19, 0.8);
+}
+.mindblown-ui .horizontal-accordion-one .mindblown-list-header span {
+	padding: 5px 10px;
+}
+
+.mindblown-ui .horizontal-accordion-one .mindblown-list-header span.refresher {
+	cursor: pointer;
+}
+
 .mindblown-ui .horizontal-accordion-one .accordion-container {
 	width: 100%;
 	position: relative;
@@ -64,20 +111,20 @@ canvas#mbCanvas {
 	padding: 0;
 	margin: 0;
 	height: 100%;
+	overflow: scroll;
 }
 .mindblown-ui
 	.horizontal-accordion-one
 	.accordion-container
 	.accordion-item
-	.accordion-data:last-child {
-	margin-right: 20px;
+	.accordion-data
+	.accordion-data-item:last-child {
+	margin-right: 10px;
 }
 .mindblown-ui .horizontal-accordion-one .accordion-container .accordion-item {
 	display: flex;
 	flex-direction: row;
 	height: 100%;
-	background-color: #b7b7b71b;
-	backdrop-filter: blur(5px);
 	align-items: center;
 	width: 60px;
 	transition: all ease-in 1s;
@@ -100,9 +147,11 @@ canvas#mbCanvas {
 	flex-direction: column;
 	height: 100%;
 	width: 60px;
+	min-width: 60px;
 	align-items: center;
 	transition: all ease-in 0.4s;
-	background-blend-mode: luminosity;
+	/* background-blend-mode: luminosity; */
+	cursor: pointer;
 }
 .mindblown-ui
 	.horizontal-accordion-one
@@ -111,6 +160,23 @@ canvas#mbCanvas {
 	.accordion-head {
 	background-blend-mode: normal;
 }
+
+.mindblown-ui
+	.horizontal-accordion-one
+	.accordion-container
+	.accordion-item
+	.accordion-head
+	.mindblown-list-title {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	flex-direction: column;
+	align-items: center;
+	height: 100%;
+	backdrop-filter: blur(2px);
+	background: transparent;
+}
+
 .mindblown-ui
 	.horizontal-accordion-one
 	.accordion-container
@@ -119,11 +185,11 @@ canvas#mbCanvas {
 	span {
 	color: #ffffff;
 	font-family: Arial, Helvetica, sans-serif;
-	font-size: 20px;
-	transform: rotate(90deg);
+	font-size: 15px;
+	transform: rotate(-90deg);
 	display: flex;
 	width: fit-content;
-	text-wrap: nowrap;
+	/* text-wrap: nowrap; */
 	text-align: center;
 	transition: all ease-in 0.4s;
 }
@@ -134,7 +200,7 @@ canvas#mbCanvas {
 	.accordion-item
 	.accordion-data {
 	width: 0;
-	margin-left: 20px;
+
 	overflow: hidden;
 	opacity: 0;
 	height: fit-content;
@@ -147,25 +213,27 @@ canvas#mbCanvas {
 	display: flex;
 	flex-wrap: nowrap;
 	flex-direction: row;
-	animation: open 0.4s;
+	/* animation: open 0.4s; */
 	width: auto;
 
 	box-sizing: border-box;
 	opacity: 1;
 	overflow: hidden;
 	background-color: transparent;
-	height: 60%;
+	height: 80%;
 }
 .mindblown-ui
 	.horizontal-accordion-one
 	.accordion-container
 	.accordion-item.active
 	.accordion-data
-	.accordion-data-stage {
-	background-blend-mode: luminosity;
-	min-width: 170px;
+	.accordion-data-item {
+	/* background-blend-mode: luminosity; */
+	min-width: 100px;
 	min-height: 100%;
 	transition: all ease-in 0.4s;
+	margin-left: 10px;
+	border-radius: 8px;
 }
 
 .mindblown-ui
@@ -173,7 +241,7 @@ canvas#mbCanvas {
 	.accordion-container
 	.accordion-item.active
 	.accordion-data
-	.accordion-data-stage:hover {
+	.accordion-data-item:hover {
 	background-blend-mode: normal;
 	cursor: pointer;
 }
@@ -187,14 +255,16 @@ canvas#mbCanvas {
 	.accordion-container
 	.accordion-item.deactivate
 	.accordion-data {
-	animation: close 0.4s;
+	/* animation: close 0.4s; */
 }
 .mindblown-ui
 	.horizontal-accordion-one
 	.accordion-container
 	.accordion-item.active
 	.accordion-head {
-	width: 60px;
+	width: 150px;
+	min-width: 150px;
+	background: #333 !important;
 }
 @keyframes open {
 	0% {
@@ -214,7 +284,7 @@ canvas#mbCanvas {
 
 @keyframes close {
 	0% {
-		width: auto;
+		width: 150px;
 		opacity: 1;
 	}
 
@@ -233,7 +303,7 @@ canvas#mbCanvas {
 	.accordion-item.active
 	.accordion-head
 	span {
-	transform: rotate(90deg) scale(1.2);
+	transform: rotate(0deg);
 }
 .mindblown-ui
 	.horizontal-accordion-one
@@ -312,4 +382,80 @@ canvas#mbCanvas {
 	font-family: Arial, Helvetica, sans-serif;
 	font-size: 14px;
 	line-height: 18px;
+}
+
+.mindblown-panel-container {
+	position: relative;
+	width: 100%;
+	border-top-left-radius: 12px;
+	border-top-right-radius: 12px;
+	overflow: hidden;
+	transition: max-height 0.5s ease, padding 0.5s ease;
+	max-height: 50px;
+	box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.mindblown-panel-container.open {
+	max-height: 600px;
+}
+
+.mindblown-panel-toggle {
+	cursor: pointer;
+	text-align: center;
+	padding: 10px;
+	font-size: 24px;
+	color: white;
+	background: rgba(19, 19, 19, 0.8);
+}
+
+.mindblown-panel-content {
+	overflow-y: auto;
+	max-height: 500px;
+	padding: 10px;
+}
+
+/* Accordion styling */
+.mindblown-accordion {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.mindblown-accordion-item {
+	margin-bottom: 10px;
+}
+
+.mindblown-accordion-head {
+	background: #333;
+	color: white;
+	padding: 10px;
+	cursor: pointer;
+	border-radius: 8px;
+}
+
+.mindblown-accordion-body {
+	max-height: 0;
+	overflow: hidden;
+	transition: max-height 0.3s ease;
+}
+
+.mindblown-accordion-item.open .mindblown-accordion-body {
+	max-height: 500px;
+}
+
+/* Grid inside the accordion */
+.mindblown-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 8px;
+	margin-top: 10px;
+}
+
+.mindblown-grid-item {
+	background-size: cover;
+	background-position: center;
+	aspect-ratio: 1 / 1;
+	border-radius: 8px;
+	cursor: pointer;
+	background-color: #b1b1b1;
 }
