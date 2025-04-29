@@ -29,4 +29,5 @@ export default {
 	DEFAULT_SPRITE_FRAME:'modules/mindblown/assets/textures/grey_frame.png',
 	DEFAULT_SPRITE_BG:'modules/mindblown/assets/textures/black-bg.jpg',
 	CURRENT_STAGE: 'currentStage',
+	DOCK_REDUCED: 'dockReduced',
 };

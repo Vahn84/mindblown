@@ -1,7 +1,7 @@
 // scripts/setup.js
 import CONFIG from './config.js';
 import { MindblownUI } from './mindblown.js';
-import { StageManger } from './stage-manager.js';
+import { StageManager } from './stage-manager.js';
 import { Tile } from './tile.js';
 import { IS_GM, logger } from './utilities.js';
 
@@ -61,7 +61,7 @@ export async function setupModule() {
 			function (array, key, tileType, options) {
 				logger('crrentlyPlaying', array, key, tileType);
 				if (!array || !key) return options.inverse(this);
-				const currentStage = StageManger.shared().getCurrentStage();
+				const currentStage = StageManager.shared().getCurrentStage();
 				let isActive = false;
 
 				if (currentStage) {

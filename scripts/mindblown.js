@@ -1,7 +1,7 @@
 import CONFIG from './config.js';
 import { Tile } from './tile.js';
 import { logger, syncMediaDirectory } from './utilities.js';
-import { StageManger } from './stage-manager.js';
+import { StageManager } from './stage-manager.js';
 
 export class MindblownUI extends FormApplication {
 	constructor(...args) {
@@ -65,6 +65,9 @@ export class MindblownUI extends FormApplication {
 				break;
 		}
 
+		this.dockReduced =
+			game.user.getFlag(CONFIG.MOD_NAME, CONFIG.DOCK_REDUCED) || true;
+
 		this.activeCategories = {
 			[Tile.TileType.BG]:
 				game.user.getFlag(
@@ -89,6 +92,8 @@ export class MindblownUI extends FormApplication {
 			focus: this.focus,
 			tileType: Tile.TileType,
 			activeCategories: this.activeCategories,
+			dockExpanded: !this.dockReduced,
+			hasStage: StageManager.shared().stage ? true : false,
 		};
 
 		logger('MindblownUI getData', this);
@@ -143,19 +148,66 @@ export class MindblownUI extends FormApplication {
 		);
 	}
 
+	setToolbarItemsVisibility(visible) {
+		const instance = MindblownUI.getInstance();
+		if (instance._state !== Application.RENDER_STATES.RENDERED) return;
+		const $mindblown = $('#mindblown');
+		const resetBg = $mindblown.find('.toolbar.resetBg');
+		const endStream = $mindblown.find('.toolbar.endStream');
+
+		if (visible) {
+			resetBg.removeClass('hidden');
+			endStream.removeClass('hidden');
+		} else {
+			resetBg.addClass('hidden');
+			endStream.addClass('hidden');
+		}
+	}
+
 	async activateListeners() {
 		const $mindblown = $('#mindblown');
 		const instance = MindblownUI.getInstance();
-		$mindblown.find('.refresher').on('click', async (event) => {
+		$mindblown.find('.toolbar').on('click', async (event) => {
 			event.preventDefault();
 			if (!event || !event.currentTarget) return;
 			const $target = $(event.currentTarget);
-			const tileType = $target.attr('data-tileType');
-			console.log(`Clicked on stage: ${tileType}`);
-			$target.find('i').addClass('fa-spin');
-			await instance.syncMedias(tileType);
-			await instance.getData(tileType);
-			$target.find('i').removeClass('fa-spin');
+
+			if ($target.hasClass('refresher')) {
+				const tileType = $target.attr('data-tileType');
+				console.log(`Clicked on stage: ${tileType}`);
+				$target.find('i').addClass('fa-spin');
+				await instance.syncMedias(tileType);
+				await instance.getData(tileType);
+				$target.find('i').removeClass('fa-spin');
+			} else if ($target.hasClass('endStream')) {
+				StageManager.shared().destroyPIXIApp();
+			} else if ($target.hasClass('resetBg')) {
+				StageManager.shared().resetBg();
+			} else if ($target.hasClass('toggleReduce')) {
+				const $bgsAccordion = $target.closest(
+					'.horizontal-accordion-one.mindblown-bgs'
+				);
+
+				$bgsAccordion.toggleClass('reduced');
+				const $focusWrapper = $mindblown.find('#focusWrapper');
+				const $npcsWrapper = $mindblown.find('#npcsWrapper');
+				$focusWrapper.toggleClass('reduced');
+				$npcsWrapper.toggleClass('reduced');
+				let html = '';
+				if (!$bgsAccordion.hasClass('reduced')) {
+					html =
+						'<span class="title">MINIMIZE</span>  <i class="fa-solid fa-compress"></i>';
+				} else {
+					html =
+						'<span class="title">EXPAND</span>  <i class="fa-solid fa-expand"></i>';
+				}
+				$target.html(html);
+				game.user.setFlag(
+					CONFIG.MOD_NAME,
+					CONFIG.DOCK_REDUCED,
+					$bgsAccordion.hasClass('reduced')
+				);
+			}
 		});
 
 		$mindblown.find('.mindblown-panel-toggle').on('click', function () {
@@ -270,19 +322,19 @@ export class MindblownUI extends FormApplication {
 			switch (tileType) {
 				case Tile.TileType.BG:
 					tile = instance.bgs[category][index];
-					StageManger.shared().setBg(tile);
+					StageManager.shared().setBg(tile);
 					break;
 				case Tile.TileType.NPC:
 					tile = instance.npcs[category][index];
-					StageManger.shared().setNpc(tile);
+					StageManager.shared().setNpc(tile);
 					break;
 				case Tile.TileType.FOCUS:
 					tile = instance.focus[category][index];
-					StageManger.shared().setFocus(tile);
+					StageManager.shared().setFocus(tile);
 					break;
 				case Tile.TileType.VFX:
 					tile = instance.vfxs[category][index];
-					StageManger.shared().setVfx(tile);
+					StageManager.shared().setVfx(tile);
 					break;
 				default:
 					break;

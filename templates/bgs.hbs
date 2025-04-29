@@ -1,12 +1,12 @@
 {{! prettier-ignore }}
-<div class='mindblown-list mindblown-bgs horizontal-accordion-one'>
+<div class='mindblown-list mindblown-bgs horizontal-accordion-one {{#unless dockExpanded}}reduced{{/unless}}'>
   <div class="mindblown-list-header">
     <span>STAGES</span>
     <span>
-      <span class="refresher" data-tileType="{{../tileTypeBG}}">SYNC  <i class="fa-solid fa-rotate"></i></span>
-      <span class="turnOff" data-tileType="{{../tileTypeBG}}">CLOSE  <i class="fa-solid fa-power-off"></i></span>
-      <span class="erase" data-tileType="{{../tileTypeBG}}">RESET BG  <i class="fa-solid fa-eraser"></i></span>
-      <span class="toggleReduce" data-tileType="{{../tileTypeBG}}">MINIMIZE  <i class="fa-solid fa-minimize"></i></span>
+      <span class="toolbar refresher" ><span class="title">SYNC FOLDERS</span>  <i class="fa-solid fa-rotate"></i></span>
+      <span class="toolbar endStream {{#unless hasStage}}hidden{{/unless}}"><span class="title">END STREAM</span>  <i class="fa-solid fa-power-off"></i></span>
+      <span class="toolbar resetBg {{#unless hasStage}}hidden{{/unless}}"><span class="title">RESET BG</span>  <i class="fa-solid fa-eraser"></i></span>
+      <span class="toolbar toggleReduce" >{{#if dockExpanded}}<span class="title">MINIMIZE</span>  <i class="fa-solid fa-compress"></i>{{else}}<span class="title">EXPAND</span>  <i class="fa-solid fa-expand"></i>{{/if}}</span>
     </span>
   </div>
   

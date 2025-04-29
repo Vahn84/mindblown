@@ -62,7 +62,12 @@ canvas#mbCanvas {
 	width: 210px;
 
 	position: absolute;
-	bottom: 150px;
+	bottom: 149px;
+}
+
+.mindblown-ui #npcsWrapper.mindblown-accordion-wrapper.reduced,
+.mindblown-ui #focusWrapper.mindblown-accordion-wrapper.reduced {
+	bottom: 29px;
 }
 
 .mindblown-ui #focusWrapper.mindblown-accordion-wrapper {
@@ -89,16 +94,31 @@ canvas#mbCanvas {
 	height: 150px;
 }
 
+.mindblown-ui .horizontal-accordion-one.mindblown-bgs.reduced {
+	height: 30px;
+}
+
 .mindblown-ui .horizontal-accordion-one .mindblown-list-header {
 	display: flex;
 	justify-content: space-between;
 	background: rgba(19, 19, 19, 0.8);
+	min-height: 30px;
 }
 .mindblown-ui .horizontal-accordion-one .mindblown-list-header span {
 	padding: 5px 10px;
 }
+.mindblown-ui
+	.horizontal-accordion-one
+	.mindblown-list-header
+	span.resetBg.hidden,
+.mindblown-ui
+	.horizontal-accordion-one
+	.mindblown-list-header
+	span.endStream.hidden {
+	display: none;
+}
 
-.mindblown-ui .horizontal-accordion-one .mindblown-list-header span.refresher {
+.mindblown-ui .horizontal-accordion-one .mindblown-list-header span.toolbar {
 	cursor: pointer;
 }
 
@@ -390,7 +410,7 @@ canvas#mbCanvas {
 	border-top-left-radius: 12px;
 	border-top-right-radius: 12px;
 	overflow: hidden;
-	transition: max-height 0.5s ease, padding 0.5s ease;
+	transition: max-height 0.5s ease;
 	max-height: 50px;
 	box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.4);
 }

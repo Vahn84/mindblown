@@ -5,16 +5,17 @@ import { PIXIHandler } from './pixi-handler.js';
 import { logger } from './utilities.js';
 import { Tile } from './tile.js';
 import { EventEmitter } from './event-emitter.js';
+import { MindblownUI } from './mindblown.js';
 
 /**
- * @class StageManger
+ * @class StageManager
  * @description Manages the current stage and its properties
  * @property {Stage} stage - The current active stage
  * @property {string} mode - The current mode of the stage (edit/play)
  * @property {PIXI.Application} PIXIApp - The PIXI application instance
  */
 
-export class StageManger extends EventEmitter {
+export class StageManager extends EventEmitter {
 	static EVENTS = {
 		BG_ENDED_TRANSITION: 'bgEndedTransion',
 		NPC_ENDED_TRANSITION: 'npcEndedTransion',
@@ -39,7 +40,7 @@ export class StageManger extends EventEmitter {
 			this._instance = new this();
 			this._instance.getCurrentStageFromCache();
 		} else {
-			// logger('StageManger already exists', this._instance);
+			// logger('StageManager already exists', this._instance);
 		}
 		return this._instance;
 	}
@@ -55,20 +56,32 @@ export class StageManger extends EventEmitter {
 		return this.stage;
 	}
 
+	initStage(bg) {
+		if (bg) {
+			this.stage = new Stage(bg);
+		} else {
+			this.stage = new Stage();
+		}
+
+		MindblownUI.getInstance().setToolbarItemsVisibility(
+			this.stage ? true : false
+		);
+	}
+
 	/**
 	 * @description Set the current active stage for the stage manager
 	 * @param {Stage} _stage - The stage to set
 	 * @returns {Stage} - The stage that was set
-	 * @memberof StageManger
+	 * @memberof StageManager
 	 * @method setStage
 	 * @example
 	 * const stage = new Stage();
-	 * const stageManager = StageManger.shared();
+	 * const stageManager = StageManager.shared();
 	 */
 	async setStage(_stage) {
-		this.stage = _stage;
+		this.stage = Stage.Build(_stage);
 		// this.container = createContainer(this.stage);`
-		await this.setBg(currentStage.bg);
+		await this.setBg(this.stage.bg);
 		if (this.stage.npc) {
 			await this.setNpc(this.stage.npc);
 		}
@@ -90,7 +103,7 @@ export class StageManger extends EventEmitter {
 			this.stage.bg.pixiOptions.alpha = 1;
 			await PIXIHandler.setBgOnStage(this.PIXIApp, this.stage.bg);
 		} else {
-			this.stage = new Stage(bg);
+			this.initStage(bg);
 			if (!this.PIXIApp) {
 				const originalWidth = Math.max(
 					document.documentElement.clientWidth,
@@ -112,13 +125,27 @@ export class StageManger extends EventEmitter {
 
 	async setNpc(npc) {
 		if (!this.stage) {
-			this.stage = new Stage();
+			this.initStage();
 		}
 		if (!this.stage.bg) {
 			await this.setDefaultBg();
 		}
+		const currentNpc = structuredClone(this.stage.npc);
+
 		this.stage.setNpc(npc);
-		this.setNpcOnStage();
+
+		if (
+			currentNpc &&
+			currentNpc.id !== npc?.id &&
+			currentNpc.pixiOptionsRuntime &&
+			this.stage.npc
+		) {
+			this.stage.npc.pixiOptionsRuntime.alpha =
+				currentNpc.pixiOptionsRuntime.alpha;
+			this.stage.npc.pixiOptionsRuntime.visible =
+				currentNpc.pixiOptionsRuntime.visible;
+		}
+		this.setTileOnStage(Tile.TileType.NPC, this.stage.npc);
 		//SOCKET
 		if (IS_GM()) {
 			await this.saveStage(this.stage, 'setNpc');
@@ -126,25 +153,53 @@ export class StageManger extends EventEmitter {
 	}
 	async setFocus(focus) {
 		if (!this.stage) {
-			this.stage = new Stage();
+			this.initStage();
 		}
 		if (!this.stage.bg) {
 			await this.setDefaultBg();
 		}
+		const currentFocus = structuredClone(this.stage.focus);
 		this.stage.setFocus(focus);
+		if (
+			currentFocus &&
+			currentFocus.id !== focus?.id &&
+			currentFocus.pixiOptionsRuntime &&
+			this.stage.focus
+		) {
+			this.stage.focus.pixiOptionsRuntime.alpha =
+				currentFocus.pixiOptionsRuntime.alpha;
+			this.stage.focus.pixiOptionsRuntime.visible =
+				currentFocus.pixiOptionsRuntime.visible;
+		}
+		this.setTileOnStage(Tile.TileType.FOCUS, this.stage.focus);
 		//SOCKET
 		if (IS_GM()) {
 			await this.saveStage(this.stage, 'setFocus');
 		}
 	}
-	async setVfx(focus) {
+	async setVfx(vfx) {
 		if (!this.stage) {
-			this.stage = new Stage();
+			this.initStage();
 		}
 		if (!this.stage.bg) {
 			await this.setDefaultBg();
 		}
-		this.stage.setVfx(focus);
+
+		const currentVfx = structuredClone(this.stage.focus);
+		this.stage.setVfx(vfx);
+
+		if (
+			currentVfx &&
+			currentVfx.id !== vfx?.id &&
+			currentVfx.pixiOptionsRuntime &&
+			this.stage.vfx
+		) {
+			this.stage.vfx.pixiOptionsRuntime.alpha =
+				currentVfx.pixiOptionsRuntime.alpha;
+			this.stage.vfx.pixiOptionsRuntime.visible =
+				currentVfx.pixiOptionsRuntime.visible;
+		}
+		this.setTileOnStage(Tile.TileType.VFX, this.stage.vfx);
 		//SOCKET
 		if (IS_GM()) {
 			await this.saveStage(this.stage, 'setVfx');
@@ -153,7 +208,7 @@ export class StageManger extends EventEmitter {
 
 	async setWeather(weather) {
 		if (!this.stage) {
-			this.stage = new Stage();
+			this.initStage();
 		}
 		if (!this.stage.bg) {
 			await this.setDefaultBg();
@@ -183,12 +238,14 @@ export class StageManger extends EventEmitter {
 			document.documentElement.clientHeight,
 			window.innerHeight || 0
 		);
-		await PIXIHandler.SetupPIXIAppStage(
-			this.PIXIApp,
-			this.stage.bg,
-			originalWidth,
-			originalHeight
-		);
+		if (this.stage?.bg) {
+			await PIXIHandler.SetupPIXIAppStage(
+				this.PIXIApp,
+				this.stage.bg,
+				originalWidth,
+				originalHeight
+			);
+		}
 	}
 
 	async setBgOnStage() {
@@ -211,8 +268,8 @@ export class StageManger extends EventEmitter {
 		await this.setBgOnStage();
 	}
 
-	async setNpcOnStage() {
-		await PIXIHandler.setNpcOnStage(this.PIXIApp, this.stage.npc);
+	async setTileOnStage(tileType, tile) {
+		await PIXIHandler.setTileOnStage(this.PIXIApp, tileType, tile);
 	}
 
 	async clearBg() {
@@ -256,18 +313,45 @@ export class StageManger extends EventEmitter {
 						this.PIXIApp,
 						this.stage.npc
 					);
+					this.updateTile(this.stage.npc);
 					break;
 				case Tile.TileType.FOCUS:
 					await PIXIHandler.toggleSpriteVisibility(
 						this.PIXIApp,
 						this.stage.focus
 					);
+					this.updateTile(this.stage.focus);
 					break;
 				case Tile.TileType.VFX:
 					await PIXIHandler.toggleSpriteVisibility(
 						this.PIXIApp,
 						this.stage.vfx
 					);
+					this.updateTile(this.stage.vfx);
+					break;
+			}
+		}
+	}
+
+	async updateTile(tile) {
+		if (IS_GM()) {
+			await this.saveStage(this.stage, 'updateTile', tile.tileType);
+		}
+	}
+
+	async updateSpriteFromTile(stage, tileType) {
+		if (this.PIXIApp && this.stage) {
+			switch (tileType) {
+				case Tile.TileType.NPC:
+					await this.setNpc(stage.npc);
+					break;
+				case Tile.TileType.FOCUS:
+					await this.setFocus(stage.focus);
+					break;
+				case Tile.TileType.VFX:
+					await this.setVfx(stage.vfx);
+					break;
+				default:
 					break;
 			}
 		}
@@ -290,8 +374,7 @@ export class StageManger extends EventEmitter {
 
 	async saveStage(stage, action, actionTileType) {
 		if (!stage) {
-			await game.user.unsetFlag(CONFIG.MOD_NAME, CONFIG.CURRENT_STAGE);
-			game.socket.emit(CONFIG.MOD_NAME, {
+			game.socket.emit(`module.${CONFIG.MOD_NAME}`, {
 				action: 'destroy',
 				stage: null,
 			});
@@ -301,7 +384,7 @@ export class StageManger extends EventEmitter {
 				CONFIG.CURRENT_STAGE,
 				stage
 			);
-			game.socket.emit(CONFIG.MOD_NAME, {
+			game.socket.emit(`module.${CONFIG.MOD_NAME}`, {
 				action,
 				stage,
 				actionTileType,
@@ -321,9 +404,12 @@ export class StageManger extends EventEmitter {
 			this.isFocusTransitioning = false;
 			this._instance = null;
 		}
+		this.stage = null;
+		await game.user.unsetFlag(CONFIG.MOD_NAME, CONFIG.CURRENT_STAGE);
 
 		//SOCKET
 		if (IS_GM()) {
+			MindblownUI.getInstance().setToolbarItemsVisibility(false);
 			await this.saveStage(null);
 		}
 	}
@@ -334,43 +420,47 @@ export class StageManger extends EventEmitter {
 		if (IS_GM()) return;
 		if (data.action) {
 			const stage = data.stage;
-			if (this.stage && this.PIXIApp) {
-				switch (data.action) {
-					case 'setBg':
-						await this.setBg(stage.bg);
-						break;
-					case 'setNpc':
-						await this.setNpc(stage.npc);
-						break;
-					case 'setFocus':
-						await this.setFocus(stage.focus);
-						break;
-					case 'setVfx':
-						await this.setVfx(stage.vfx);
-						break;
-					case 'setWeather':
-						await this.setWeather(stage.weather);
-						break;
-					case 'clearBg':
-						await this.clearBg();
-						break;
-					case 'clearTile':
-						await this.clearTile(data.actionTileType);
-						break;
-					case 'toggleTileVisibility':
-						await this.toggleTileVisibility(data.actionTileType);
-						break;
-					default:
-						break;
-				}
-			} else {
-				if (!this.stage) {
-					this.setStage(stage);
-				}
-				if (!this.PIXIApp) {
-					await this.initPIXIApp();
-				}
+
+			switch (data.action) {
+				case 'setBg':
+					await this.setBg(stage.bg);
+					break;
+				case 'setNpc':
+					await this.setNpc(stage.npc);
+					break;
+				case 'setFocus':
+					await this.setFocus(stage.focus);
+					break;
+				case 'setVfx':
+					await this.setVfx(stage.vfx);
+					break;
+				case 'setWeather':
+					await this.setWeather(stage.weather);
+					break;
+				case 'clearBg':
+					await this.clearBg();
+					break;
+				case 'clearTile':
+					await this.clearTile(data.actionTileType);
+					break;
+				case 'toggleTileVisibility':
+					await this.toggleTileVisibility(data.actionTileType);
+					break;
+				case 'updateTile':
+					await this.updateSpriteFromTile(stage, data.actionTileType);
+					break;
+				case 'destroy':
+					await this.destroyPIXIApp();
+					break;
+				default:
+					break;
 			}
+
+			await game.user.setFlag(
+				CONFIG.MOD_NAME,
+				CONFIG.CURRENT_STAGE,
+				stage
+			);
 		}
 	}
 }
