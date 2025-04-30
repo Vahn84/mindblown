@@ -130,8 +130,11 @@ export class StageManager extends EventEmitter {
 		if (!this.stage.bg) {
 			await this.setDefaultBg();
 		}
-		const currentNpc = structuredClone(this.stage.npc);
 
+		const currentNpc = this.stage.npc;
+		if (currentNpc) {
+			currentNpc.initialized = false;
+		}
 		this.stage.setNpc(npc);
 
 		if (
@@ -158,7 +161,11 @@ export class StageManager extends EventEmitter {
 		if (!this.stage.bg) {
 			await this.setDefaultBg();
 		}
-		const currentFocus = structuredClone(this.stage.focus);
+
+		const currentFocus = this.stage.focus;
+		if (currentFocus) {
+			currentFocus.initialized = false;
+		}
 		this.stage.setFocus(focus);
 		if (
 			currentFocus &&
@@ -185,7 +192,10 @@ export class StageManager extends EventEmitter {
 			await this.setDefaultBg();
 		}
 
-		const currentVfx = structuredClone(this.stage.focus);
+		const currentVfx = this.stage.vfx;
+		if (currentVfx) {
+			currentVfx.initialized = false;
+		}
 		this.stage.setVfx(vfx);
 
 		if (
@@ -213,7 +223,24 @@ export class StageManager extends EventEmitter {
 		if (!this.stage.bg) {
 			await this.setDefaultBg();
 		}
+
 		this.stage.setWeather(weather);
+
+		const originalWidth = Math.max(
+			document.documentElement.clientWidth,
+			window.innerWidth || 0
+		);
+		const originalHeight = Math.max(
+			document.documentElement.clientHeight,
+			window.innerHeight || 0
+		);
+		PIXIHandler.ToggleWeatherEffectOnStage(
+			this.PIXIApp,
+			this.stage.weather,
+			originalWidth,
+			originalHeight
+		);
+
 		//SOCKET
 		if (IS_GM()) {
 			await this.saveStage(this.stage, 'setWeather');
@@ -263,7 +290,7 @@ export class StageManager extends EventEmitter {
 			Tile.TileType.BG
 		);
 		this.stage.setBg(defaultBgTile);
-		defaultBgTile.setAlpha(0.5);
+		defaultBgTile.pixiOptions.alpha = 0.5;
 		defaultBgTile.setIsDefault(true);
 		await this.setBgOnStage();
 	}

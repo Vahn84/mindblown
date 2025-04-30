@@ -24,8 +24,17 @@ export class EventEmitter {
 		event.target = this;
 		event.data = data;
 
-		this.#callbacks[eventType].forEach((callback) => {
+		this.#callbacks[eventType].forEach((callback, index) => {
 			callback(event);
+			this.#callbacks[eventType].splice(index, 1);
 		});
+	}
+
+	removeEventListener(eventType, callback) {
+		if (this.#callbacks[eventType] === undefined) return;
+
+		this.#callbacks[eventType] = this.#callbacks[eventType].filter(
+			(cb) => cb !== callback
+		);
 	}
 }

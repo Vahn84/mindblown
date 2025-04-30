@@ -27,7 +27,7 @@ export default {
 		FOCUS: 'activeFocus',
 	},
 	DEFAULT_SPRITE_FRAME:'modules/mindblown/assets/textures/grey_frame.png',
-	DEFAULT_SPRITE_BG:'modules/mindblown/assets/textures/black-bg.jpg',
+	DEFAULT_SPRITE_BG:'modules/mindblown/assets/textures/black-bg.png',
 	CURRENT_STAGE: 'currentStage',
 	DOCK_REDUCED: 'dockReduced',
 };

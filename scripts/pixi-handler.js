@@ -71,6 +71,7 @@ export class PIXIHandler {
 	}
 
 	static async setTileOnStage(PIXIApp, tileType, tile) {
+		console.trace('setTileOnStage called');
 		let containerName = '';
 		let spriteName = '';
 		let tmpSpriteName = '';
@@ -109,7 +110,8 @@ export class PIXIHandler {
 						PIXIApp,
 						delta,
 						sprite,
-						tileSpriteTickerOut
+						tileSpriteTickerOut,
+						spriteContainer
 					),
 				this
 			);
@@ -118,6 +120,12 @@ export class PIXIHandler {
 		}
 
 		const texture = await PIXI.Assets.load(tile.path);
+		if (texture && tile.mediaType === Tile.MediaType.VIDEO) {
+			texture.baseTexture.resource.source.autoplay = true;
+			texture.baseTexture.resource.source.loop = tile.loop;
+			texture.baseTexture.resource.source.muted = tile.mute;
+			texture.baseTexture.resource.source.play();
+		}
 		const newSprite = new PIXI.Sprite(texture);
 
 		let bgSprite = bgContainer.getChildByName(PIXIHandler.PIXI_DO.BG_ID);
@@ -138,6 +146,9 @@ export class PIXIHandler {
 			StageManager.shared().addEventListener(
 				StageManager.EVENTS.BG_ENDED_TRANSITION,
 				async () => {
+					logger(
+						'RESIZE SPRITE CALL FROM: setTileOnStage - BG TRANSITION ENDED'
+					);
 					await PIXIHandler.ResizeSprite(newSprite, bgSprite, tile);
 					tileSpriteTicker.add(
 						(delta) =>
@@ -156,6 +167,9 @@ export class PIXIHandler {
 			);
 			tileSpriteTicker.start();
 		} else {
+			logger(
+				'RESIZE SPRITE CALL FROM: setTileOnStage - BG NOT TRANSITIONING'
+			);
 			await PIXIHandler.ResizeSprite(newSprite, bgSprite, tile);
 			tileSpriteTicker.add(
 				(delta) =>
@@ -298,7 +312,13 @@ export class PIXIHandler {
 		}
 	}
 
-	static async tileSpriteTickerTransitionOut(PIXIApp, delta, sprite, ticker) {
+	static async tileSpriteTickerTransitionOut(
+		PIXIApp,
+		delta,
+		sprite,
+		ticker,
+		spriteContainer
+	) {
 		if (!sprite) return;
 
 		sprite.alpha -= 0.01 * delta;
@@ -308,34 +328,11 @@ export class PIXIHandler {
 				ticker.stop();
 				ticker.destroy();
 
-				let container = null;
-				switch (tile.tileType) {
-					case Tile.TileType.NPC:
-						container = PIXIApp.stage.getChildByName(
-							PIXIHandler.PIXI_WRAPPERS.NPC_ID
-						);
-						break;
-					case Tile.TileType.FOCUS:
-						container = PIXIApp.stage.getChildByName(
-							PIXIHandler.PIXI_WRAPPERS.FOCUS_ID
-						);
-						break;
-					case Tile.TileType.VFX:
-						container = PIXIApp.stage.getChildByName(
-							PIXIHandler.PIXI_WRAPPERS.VFX_ID
-						);
-						break;
-					default:
-						container = PIXIApp.stage.getChildByName(
-							PIXIHandler.PIXI_WRAPPERS.NPC_ID
-						);
-						break;
-				}
 				if (sprite.__controls) {
 					sprite.__controls.destroy();
 				}
-				if (container) {
-					container.removeChild(sprite);
+				if (spriteContainer) {
+					spriteContainer.removeChildren();
 				} else {
 					sprite.destroy();
 				}
@@ -401,7 +398,8 @@ export class PIXIHandler {
 			PIXIHandler.ResizeStage(
 				PIXIApp,
 				window.innerWidth,
-				window.innerHeight
+				window.innerHeight,
+				true
 			);
 			StageManager.shared().setIsBgTransitioning(false);
 			StageManager.shared().dispatchEvent(
@@ -492,10 +490,36 @@ export class PIXIHandler {
 		// );
 
 		window.addEventListener('resize', () => {
-			PIXIHandler.ResizeStage(PIXIApp, originalWidth, originalHeight);
+			PIXIHandler.ResizeStage(
+				PIXIApp,
+				originalWidth,
+				originalHeight,
+				true
+			);
 		});
 		if (bg) {
 			PIXIHandler.setBgOnStage(PIXIApp, bg);
+		}
+	}
+
+	static async ToggleWeatherEffectOnStage(
+		PIXIApp,
+		weather,
+		originalWidth,
+		originalHeight
+	) {
+		if (weather) {
+			await PIXIHandler.AddPIXIParticlesEffect(PIXIApp, weather, {
+				x: originalWidth / 2,
+				y: originalHeight / 2,
+			});
+		} else {
+			const weatherContainer = PIXIApp.stage.getChildByName(
+				PIXIHandler.PIXI_WRAPPERS.WEATHER_ID
+			);
+			if (weatherContainer) {
+				weatherContainer.removeChildren();
+			}
 		}
 	}
 
@@ -504,8 +528,8 @@ export class PIXIHandler {
 			PIXIHandler.PIXI_WRAPPERS.BG_ID
 		);
 		const bgSprite = bgContainer.getChildByName(PIXIHandler.PIXI_DO.BG_ID);
-		const vfxContainer = PIXIApp.stage.getChildByName(
-			PIXIHandler.PIXI_WRAPPERS.VFX_ID
+		const weatherContainer = PIXIApp.stage.getChildByName(
+			PIXIHandler.PIXI_WRAPPERS.WEATHER_ID
 		);
 		const initialX = defaultPosition.x || 0;
 		const initialY = defaultPosition.y || 0;
@@ -579,15 +603,20 @@ export class PIXIHandler {
 		};
 
 		// Make the wrapper draggable
-		wrapper.interactive = true;
-		wrapper.interactiveChildren = false; // << Prevent children from stealing events
-		wrapper.buttonMode = true;
+		// wrapper.interactive = true;
+		// wrapper.interactiveChildren = false; // << Prevent children from stealing events
+		// wrapper.buttonMode = true;
 
-		vfxContainer.interactive = true;
-		vfxContainer.addChild(wrapper);
+		// weatherContainer.interactive = true;
+		weatherContainer.addChild(wrapper);
 	}
 
-	static async ResizeStage(PIXIApp, originalWidth, originalHeight) {
+	static async ResizeStage(
+		PIXIApp,
+		originalWidth,
+		originalHeight,
+		isBgTransition = false
+	) {
 		let screenWidth = Math.max(
 			document.documentElement.clientWidth,
 			window.innerWidth || 0
@@ -596,6 +625,9 @@ export class PIXIHandler {
 			document.documentElement.clientHeight,
 			window.innerHeight || 0
 		);
+
+		console.trace('setTileOnStage called');
+		logger('ResizeStage called', screenWidth, screenHeight);
 		PIXIHandler.ResizeRenderer(PIXIApp, screenWidth, screenHeight);
 
 		const bgContainer = PIXIApp.stage.getChildByName(
@@ -648,13 +680,21 @@ export class PIXIHandler {
 		const focus = StageManager.shared().stage?.focus;
 		const vfx = StageManager.shared().stage?.vfx;
 		if (npc) {
-			PIXIHandler.ResizeSprite(npcSprite, bgSprite, npc);
+			logger('RESIZE SPRITE CALL FROM: ResizeStage - NPC');
+			PIXIHandler.ResizeSprite(npcSprite, bgSprite, npc, isBgTransition);
 		}
 		if (focus) {
-			PIXIHandler.ResizeSprite(focusSprite, bgSprite, focus);
+			logger('RESIZE SPRITE CALL FROM: ResizeStage - FOCUS');
+			PIXIHandler.ResizeSprite(
+				focusSprite,
+				bgSprite,
+				focus,
+				isBgTransition
+			);
 		}
 		if (vfx) {
-			PIXIHandler.ResizeSprite(vfxSprite, bgSprite, vfx);
+			logger('RESIZE SPRITE CALL FROM: ResizeStage - VFX');
+			PIXIHandler.ResizeSprite(vfxSprite, bgSprite, vfx, isBgTransition);
 		}
 		// PIXIHandler.ResizeSprite(objSprite, bgRef);
 		PIXIHandler.ResizeParticlesEffects(weatherContainer, bgSprite);
@@ -721,7 +761,7 @@ export class PIXIHandler {
 		}
 	}
 
-	static async ResizeSprite(sprite, bgRef, tile) {
+	static async ResizeSprite(sprite, bgRef, tile, isBgTransition = false) {
 		if (!sprite || !bgRef || !tile) return;
 
 		const options = tile.pixiOptionsRuntime || tile.pixiOptions || {};
@@ -781,7 +821,11 @@ export class PIXIHandler {
 			sprite.position.set(newX, newY);
 
 			// Update control buttons if present
-			PIXIHandler.updateControlButtonsPosition(sprite, tile);
+			PIXIHandler.updateControlButtonsPosition(
+				sprite,
+				tile,
+				isBgTransition
+			);
 		}
 	}
 
@@ -835,7 +879,7 @@ export class PIXIHandler {
 			if (type === Tile.TileType.FOCUS)
 				return StageManager.shared()?.stage?.focus;
 			if (type === Tile.TileType.VFX)
-				return StageManager.shared()?.stage?.vfxs;
+				return StageManager.shared()?.stage?.vfx;
 			return null;
 		}
 
@@ -914,7 +958,7 @@ export class PIXIHandler {
 		if (type === Tile.TileType.FOCUS)
 			tile = StageManager.shared()?.stage?.focus;
 		if (type === Tile.TileType.VFX)
-			tile = StageManager.shared()?.stage?.vfxs;
+			tile = StageManager.shared()?.stage?.vfx;
 		const isVisibleToPlayers = tile?.pixiOptionsRuntime?.visible ?? true;
 
 		const hideButton = createButton(
@@ -1079,8 +1123,8 @@ export class PIXIHandler {
 		PIXIHandler.updateControlButtonsPosition(sprite, tile);
 	}
 
-	static updateControlButtonsPosition(sprite, tile) {
-		if (!sprite.__controls) return;
+	static updateControlButtonsPosition(sprite, tile, isBgTransition = false) {
+		if (!sprite.__controls || !IS_GM()) return;
 		const controls = sprite.__controls;
 		// Controls' position: align top-right for hide/clear, bottom-right for resize
 		const w = sprite.width;
@@ -1125,6 +1169,9 @@ export class PIXIHandler {
 			const bgX = bgSprite?.position?.x ?? 0;
 			const bgY = bgSprite?.position?.y ?? 0;
 
+			// Prevent feedback loop during window resize events
+			if (isBgTransition) return;
+
 			if (!tile.pixiOptionsRuntime) tile.pixiOptionsRuntime = {};
 			tile.pixiOptionsRuntime.width = sprite.width;
 			tile.pixiOptionsRuntime.height = sprite.height;
@@ -1137,8 +1184,19 @@ export class PIXIHandler {
 			if (!tile.initialized) {
 				tile.initialized = true;
 			} else {
-				if (IS_GM()) {
-					StageManager.shared().updateTile(tile);
+				if (IS_GM() && !isBgTransition) {
+					if (!StageManager._updateDebounceMap) {
+						StageManager._updateDebounceMap = new Map();
+					}
+					const key = tile.tileType;
+					if (StageManager._updateDebounceMap.has(key)) {
+						clearTimeout(StageManager._updateDebounceMap.get(key));
+					}
+					const timeout = setTimeout(() => {
+						StageManager._updateDebounceMap.delete(key);
+						StageManager.shared().updateTile(tile);
+					}, 1000);
+					StageManager._updateDebounceMap.set(key, timeout);
 				}
 			}
 		}

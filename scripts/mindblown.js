@@ -1,6 +1,7 @@
 import CONFIG from './config.js';
 import { Tile } from './tile.js';
 import { logger, syncMediaDirectory } from './utilities.js';
+import { VFX_TYPES } from './effects.js';
 import { StageManager } from './stage-manager.js';
 
 export class MindblownUI extends FormApplication {
@@ -94,6 +95,11 @@ export class MindblownUI extends FormApplication {
 			activeCategories: this.activeCategories,
 			dockExpanded: !this.dockReduced,
 			hasStage: StageManager.shared().stage ? true : false,
+			weather: {
+				rain: VFX_TYPES.RAIN,
+				snow: VFX_TYPES.SNOW,
+				fog: VFX_TYPES.SWIRLING_FOG,
+			},
 		};
 
 		logger('MindblownUI getData', this);
@@ -154,14 +160,88 @@ export class MindblownUI extends FormApplication {
 		const $mindblown = $('#mindblown');
 		const resetBg = $mindblown.find('.toolbar.resetBg');
 		const endStream = $mindblown.find('.toolbar.endStream');
-
+		const $weatherToolbar = $mindblown.find('.weatherToolbar');
 		if (visible) {
 			resetBg.removeClass('hidden');
 			endStream.removeClass('hidden');
+			$weatherToolbar
+				.find('.weather-button')
+				.not('.vfx')
+				.removeClass('hidden');
 		} else {
 			resetBg.addClass('hidden');
 			endStream.addClass('hidden');
+			$weatherToolbar
+				.find('.weather-button')
+				.not('.vfx')
+				.addClass('hidden');
 		}
+	}
+
+	openVFXDialog($triggerButton) {
+		let inputValue = '';
+
+		const dialog = new Dialog({
+			title: 'Add VFX Tile',
+			content: `
+			<form>
+			  <div class="form-group">
+				<input type="text" id="vfx-path" name="vfx-path" style="width:100%;" placeholder="Vfx Path"/>
+			  </div>
+			</form>
+		  `,
+			buttons: {
+				openDB: {
+					label: 'Browse DB',
+					icon: '<i class="fas fa-server"></i>',
+					callback: () => {
+						Sequencer.DatabaseViewer.show();
+					},
+				},
+				confirm: {
+					label: 'Confirm',
+					icon: '<i class="fas fa-check"></i>',
+					callback: async (html) => {
+						const path = html.find('#vfx-path').val();
+						console.log('Creating VFX Tile with path:', path);
+
+						let fileName = path.split('/').pop();
+						StageManager.shared().setVfx(
+							new Tile(fileName, path, Tile.TileType.VFX)
+						);
+					},
+				},
+				cancel: {
+					label: 'Cancel',
+					icon: '<i class="fas fa-times"></i>',
+					callback: () => {
+						if ($triggerButton) $triggerButton.removeClass('active');
+					},
+				},
+			},
+			default: 'confirm',
+			close: (html) => {
+	
+			},
+			render: (html) => {
+				const confirmButton = html.find(
+					'button[data-button="confirm"]'
+				);
+				const input = html.find('#vfx-path');
+
+				function validateInput() {
+					const value = input.val();
+					const isValid =
+						value.endsWith('.mp4') || value.endsWith('.webm');
+					confirmButton.prop('disabled', !isValid);
+				}
+
+				input.on('input', validateInput);
+				validateInput();
+			},
+		});
+
+		dialog.render(true);
 	}
 
 	async activateListeners() {
@@ -182,7 +262,7 @@ export class MindblownUI extends FormApplication {
 			} else if ($target.hasClass('endStream')) {
 				StageManager.shared().destroyPIXIApp();
 			} else if ($target.hasClass('resetBg')) {
-				StageManager.shared().resetBg();
+				StageManager.shared().clearBg();
 			} else if ($target.hasClass('toggleReduce')) {
 				const $bgsAccordion = $target.closest(
 					'.horizontal-accordion-one.mindblown-bgs'
@@ -191,8 +271,10 @@ export class MindblownUI extends FormApplication {
 				$bgsAccordion.toggleClass('reduced');
 				const $focusWrapper = $mindblown.find('#focusWrapper');
 				const $npcsWrapper = $mindblown.find('#npcsWrapper');
+				const $weatherToolbar = $mindblown.find('.weatherToolbar');
 				$focusWrapper.toggleClass('reduced');
 				$npcsWrapper.toggleClass('reduced');
+				$weatherToolbar.toggleClass('reduced');
 				let html = '';
 				if (!$bgsAccordion.hasClass('reduced')) {
 					html =
@@ -220,6 +302,27 @@ export class MindblownUI extends FormApplication {
 			.find('.mindblown-panel-container')
 			.on('click', '.mindblown-grid-item', function (event) {
 				showOnStage(event);
+			});
+		$mindblown
+			.find('.mindblown-list-header')
+			.on('click', '.weather-button', function (event) {
+				event.preventDefault();
+				const $target = $(event.currentTarget);
+				const effect = $target.attr('data-effect');
+				if ($target.hasClass('active')) {
+					$target.removeClass('active');
+					if (effect === 'vfx') {
+						StageManager.shared().setVfx(null);
+					} else {
+						StageManager.shared().setWeather(null);
+					}
+				} else {
+					if (effect === 'vfx') {
+						instance.openVFXDialog($target);
+					} else {
+						StageManager.shared().setWeather(effect);
+					}
+				}
 			});
 
 		// Handle accordion click

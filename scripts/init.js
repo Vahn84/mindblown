@@ -14,6 +14,7 @@ Hooks.on('ready', () => {
 	game.socket.on(`module.${CONFIG.MOD_NAME}`, (data) => {
 		StageManager.shared().SocketSetStageByAction(data);
 	});
+	StageManager.shared().destroyPIXIApp();
 	if (!game.user.isGM) return;
 	initSettings();
 	const trpTaskbar = $('#taskbar');
@@ -24,7 +25,7 @@ Hooks.on('ready', () => {
 		.after(
 			'<aside id="mbQuickInsert"><h3><i class="fas fa-mask-ventilator"></i></h3></aside>'
 		);
-	StageManager.shared();
+	
 	trpTaskbar.on('click', '#mbQuickInsert', (event) => {
 		event.preventDefault();
 		// logger('pixi', PIXI);

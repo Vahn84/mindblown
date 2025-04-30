@@ -2,6 +2,13 @@
 <div class='mindblown-list mindblown-bgs horizontal-accordion-one {{#unless dockExpanded}}reduced{{/unless}}'>
   <div class="mindblown-list-header">
     <span>STAGES</span>
+    <div class="weatherToolbar {{#unless dockExpanded}}reduced{{/unless}}">
+      <div class="weather-button rain {{#unless hasStage}}hidden{{/unless}} " data-effect="{{weather.rain}}" title="Rain"><i class="fa-solid fa-cloud-showers-heavy"></i></div>
+      <div class="weather-button fog {{#unless hasStage}}hidden{{/unless}} " data-effect="{{weather.fog}}" title="Fog"><i class="fa-solid fa-smog"></i></div>
+      <div class="weather-button snow {{#unless hasStage}}hidden{{/unless}} " data-effect="{{weather.snow}}" title="Snow"><i class="fa-solid fa-snowflake"></i></div>
+       <div class="weather-button vfx" data-effect="vfx" title="VFX"><i class="fa-solid fa-film"></i></i></div>
+      {{!-- <div class="weather-button thunder" data-effect="{{weather.thunder}}" title="Thunder"><i class="fa-solid fa-bolt"></i></div> --}}
+    </div>
     <span>
       <span class="toolbar refresher" ><span class="title">SYNC FOLDERS</span>  <i class="fa-solid fa-rotate"></i></span>
       <span class="toolbar endStream {{#unless hasStage}}hidden{{/unless}}"><span class="title">END STREAM</span>  <i class="fa-solid fa-power-off"></i></span>
