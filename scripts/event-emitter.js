@@ -23,11 +23,14 @@ export class EventEmitter {
 		event.type = eventType;
 		event.target = this;
 		event.data = data;
-
-		this.#callbacks[eventType].forEach((callback, index) => {
-			callback(event);
-			this.#callbacks[eventType].splice(index, 1);
-		});
+		for (var i = 0; i < this.#callbacks[eventType].length; i++) {
+			const callback = this.#callbacks[eventType][i];
+			if (typeof callback === 'function') {
+				callback(event);
+				this.#callbacks[eventType].splice(i, 1);
+				i--;
+			}
+		}
 	}
 
 	removeEventListener(eventType, callback) {

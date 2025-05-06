@@ -56,8 +56,8 @@ export class MindblownUI extends FormApplication {
 					[];
 				break;
 			default:
-				this.bgs =
-					game.user.getFlag(CONFIG.MOD_NAME, Tile.TileType.BG) || [];
+				this.bgs = this.getFilteredBgs();
+				this.allBgs = this.getUnfilteredBgs();
 				this.npcs =
 					game.user.getFlag(CONFIG.MOD_NAME, Tile.TileType.NPC) || [];
 				this.focus =
@@ -87,6 +87,8 @@ export class MindblownUI extends FormApplication {
 				) || [],
 		};
 
+		this.modeIsFavourite = true;
+
 		return {
 			bgs: this.bgs,
 			npcs: this.npcs,
@@ -99,10 +101,29 @@ export class MindblownUI extends FormApplication {
 				rain: VFX_TYPES.RAIN,
 				snow: VFX_TYPES.SNOW,
 				fog: VFX_TYPES.SWIRLING_FOG,
+				sandstorm: VFX_TYPES.SANDSTORM,
+				thunder: VFX_TYPES.THUNDER,
 			},
+			activeWeather: StageManager.shared().stage?.weather,
+			modeIsFavourite: this.modeIsFavourite,
 		};
 
 		logger('MindblownUI getData', this);
+	}
+
+	async getUnfilteredBgs() {
+		return game.user.getFlag(CONFIG.MOD_NAME, Tile.TileType.BG) || [];
+	}
+
+	async getFilteredBgs() {
+		const instance = MindblownUI.getInstance();
+		const bgs = await instance.getUnfilteredBgs();
+		const filteredBgs = {};
+		Object.keys(bgs).map((key) => {
+			const filtered = bgs[key].filter((tile) => tile.isFavourite);
+			filteredBgs[key] = filtered;
+		});
+		return filteredBgs;
 	}
 
 	async syncMedias(tileType = null) {
@@ -160,10 +181,12 @@ export class MindblownUI extends FormApplication {
 		const $mindblown = $('#mindblown');
 		const resetBg = $mindblown.find('.toolbar.resetBg');
 		const endStream = $mindblown.find('.toolbar.endStream');
+		const forceStream = $mindblown.find('.toolbar.forceStream');
 		const $weatherToolbar = $mindblown.find('.weatherToolbar');
 		if (visible) {
 			resetBg.removeClass('hidden');
 			endStream.removeClass('hidden');
+			forceStream.removeClass('hidden');
 			$weatherToolbar
 				.find('.weather-button')
 				.not('.vfx')
@@ -171,6 +194,7 @@ export class MindblownUI extends FormApplication {
 		} else {
 			resetBg.addClass('hidden');
 			endStream.addClass('hidden');
+			forceStream.addClass('hidden');
 			$weatherToolbar
 				.find('.weather-button')
 				.not('.vfx')
@@ -215,14 +239,13 @@ export class MindblownUI extends FormApplication {
 					label: 'Cancel',
 					icon: '<i class="fas fa-times"></i>',
 					callback: () => {
-						if ($triggerButton) $triggerButton.removeClass('active');
+						if ($triggerButton)
+							$triggerButton.removeClass('active');
 					},
 				},
 			},
 			default: 'confirm',
-			close: (html) => {
-	
-			},
+			close: (html) => {},
 			render: (html) => {
 				const confirmButton = html.find(
 					'button[data-button="confirm"]'
@@ -244,16 +267,92 @@ export class MindblownUI extends FormApplication {
 		dialog.render(true);
 	}
 
+	async toggleStageVisibility(hidden) {
+		const $mbCanvas = $(`#${CONFIG.MB_CANVAS_ID}`);
+		if (!$mbCanvas.length) return;
+		if (!hidden) {
+			$mbCanvas.removeClass('hidden');
+		} else {
+			$mbCanvas.addClass('hidden');
+		}
+	}
+
 	async activateListeners() {
 		const $mindblown = $('#mindblown');
 		const instance = MindblownUI.getInstance();
+
+		const $wrapper = $mindblown.find('#bgsWrapper');
+		const $scrollable = $wrapper.find('.accordion-container');
+		let currentX = 0;
+
+		// Get the DOM elements instead of jQuery objects
+		const wrapperEl = $wrapper.get(0);
+		const scrollableEl = $scrollable.get(0);
+
+		if (!wrapperEl || !scrollableEl) return;
+
+		$wrapper.on('wheel', (e) => {
+			e.preventDefault();
+
+			// Use deltaY or deltaX depending on mouse wheel direction
+			const delta = e.originalEvent.deltaY || e.originalEvent.deltaX || 0;
+
+			const maxScroll = scrollableEl.scrollWidth - wrapperEl.clientWidth;
+
+			currentX = Math.min(Math.max(currentX - delta, -maxScroll), 0);
+
+			$scrollable.css('transform', `translate3d(${currentX}px, 0, 0)`);
+		});
+
+		$mindblown.find('.media-item').each(function () {
+			const $item = $(this);
+
+			let $tooltip = null;
+
+			$item.on('mouseenter', function () {
+				const type = $item.data('mediatype');
+				const src = $item.data('src');
+
+				let content = '';
+				if (type === Tile.MediaType.IMAGE) {
+					content = `<img src="${src}" alt="preview">`;
+				} else if (type === Tile.MediaType.VIDEO) {
+					content = `<video src="${src}" autoplay muted loop></video>`;
+				}
+
+				if (content && content.length > 0) {
+					$item
+						.find('.media-tooltip')
+						.addClass('active')
+						.html(content);
+				}
+			});
+
+			$item.on('mousemove', function (e) {
+				if ($tooltip) {
+					$tooltip.css({
+						left: e.pageX + 15 + 'px',
+						top: e.pageY + 15 + 'px',
+					});
+				}
+			});
+
+			$item.on('mouseleave', function () {
+				if ($tooltip) {
+					$tooltip.remove();
+					$tooltip = null;
+				}
+				$item.find('.media-tooltip').html('').removeClass('active');
+			});
+		});
+
 		$mindblown.find('.toolbar').on('click', async (event) => {
 			event.preventDefault();
 			if (!event || !event.currentTarget) return;
 			const $target = $(event.currentTarget);
 
 			if ($target.hasClass('refresher')) {
-				const tileType = $target.attr('data-tileType');
+				const tileType = $target.attr('data-tiletype');
 				console.log(`Clicked on stage: ${tileType}`);
 				$target.find('i').addClass('fa-spin');
 				await instance.syncMedias(tileType);
@@ -261,6 +360,8 @@ export class MindblownUI extends FormApplication {
 				$target.find('i').removeClass('fa-spin');
 			} else if ($target.hasClass('endStream')) {
 				StageManager.shared().destroyPIXIApp();
+			} else if ($target.hasClass('forceStream')) {
+				StageManager.shared().forceCurrentStage();
 			} else if ($target.hasClass('resetBg')) {
 				StageManager.shared().clearBg();
 			} else if ($target.hasClass('toggleReduce')) {
@@ -309,17 +410,23 @@ export class MindblownUI extends FormApplication {
 				event.preventDefault();
 				const $target = $(event.currentTarget);
 				const effect = $target.attr('data-effect');
+				if (effect === VFX_TYPES.THUNDER) {
+					StageManager.shared().setFilterEffect(effect);
+					return;
+				}
 				if ($target.hasClass('active')) {
 					$target.removeClass('active');
-					if (effect === 'vfx') {
-						StageManager.shared().setVfx(null);
-					} else {
+					if (effect !== 'vfx' && effect !== 'lights') {
 						StageManager.shared().setWeather(null);
 					}
 				} else {
 					if (effect === 'vfx') {
 						instance.openVFXDialog($target);
+					} else if(effect === 'lights') {
+						StageManager.shared().addLight();
+
 					} else {
+						$target.addClass('active');
 						StageManager.shared().setWeather(effect);
 					}
 				}
@@ -381,13 +488,57 @@ export class MindblownUI extends FormApplication {
 				}
 			});
 
+		$mindblown
+			.find('.accordion-container')
+			.on('click', '.setIsFavourite', async (event) => {
+				event.preventDefault();
+				if (!event || !event.currentTarget) return;
+				const instance = MindblownUI.getInstance();
+				const $target = $(event.currentTarget);
+				const $tileItem = $target.closest('.accordion-data-item');
+				const category = $tileItem.attr('data-category');
+				const tileType = $tileItem.attr('data-tiletype');
+				const isFavouriteFilterActive = $(
+					'#bgsWrapper #filterFavourites'
+				).hasClass('active');
+				let tiles = isFavouriteFilterActive
+					? instance.bgs
+					: instance.allBgs;
+				let tile = tiles.find(
+					(tile) => tile.id === $tileItem.attr('data-tileid')
+				);
+				if (tile) {
+					const alreadyActive =
+						$target.hasClass('active') && tile.isFavourite;
+					const $accordionContainer = $target.closest(
+						'.accordion-container'
+					);
+
+					if (!alreadyActive) {
+						$target.addClass('active');
+						tile.isFavourite = true;
+					} else {
+						$target.removeClass('active');
+						tile.isFavourite = false;
+					}
+
+					loadCurrentBgsList();
+				}
+			});
+
+		$mindblown.find(' #filterFavourites').on('click', async (event) => {
+			const instance = MindblownUI.getInstance();
+			instance.modeIsFavourite = !instance.modeIsFavourite;
+			$(event.currentTarget).toggleClass('active');
+			loadCurrentBgsList();
+		});
 		$mindblown.find('.mindblown-category').on('click', async (event) => {
 			event.preventDefault();
 			if (!event || !event.currentTarget) return;
 			const instance = MindblownUI.getInstance();
 			const $target = $(event.currentTarget).closest('li.accordion-item');
 			const category = $target.attr('data-category');
-			const tileType = $target.attr('data-tileType');
+			const tileType = $target.attr('data-tiletype');
 
 			const alreadyActive = $target.hasClass('active');
 
@@ -404,6 +555,7 @@ export class MindblownUI extends FormApplication {
 					}
 				}
 			}
+			// const $accordionData = $target.find('.accordion-data');
 
 			await instance.toggleOpenedCategory(category, tileType);
 		});
@@ -444,25 +596,72 @@ export class MindblownUI extends FormApplication {
 			}
 		}
 
+		async function loadCurrentBgsList() {
+			const instance = MindblownUI.getInstance();
+			const $accordionContainer = $mindblown.find(
+				'ul.accordion-container'
+			);
+
+			$accordionContainer.html('');
+
+			const bgs = instance.modeIsFavourite
+				? await instance.getFilteredBgs()
+				: await instance.getUnfilteredBgs();
+
+			Object.keys(bgs).map(async (key) => {
+				const list = bgs[key];
+				logger('key', key);
+				logger('list', list);
+				if (list.length === 0) return;
+				const $accordionHead = $(
+					`<div class="accordion-head mindblown-category" style="background: url('${list[0]?.thumbnail}') center center no-repeat; background-size: cover;"><div class="mindblown-list-title"><span>${key}</span></div></div>`
+				);
+				const $accordionItem = $(
+					`<li data-category="" data-tiletype="${Tile.TileType.BG}" class="accordion-item"></div>`
+				);
+				$accordionItem.append($accordionHead);
+				const activeCategories =
+					(await game.user.getFlag(
+						CONFIG.MOD_NAME,
+						CONFIG.ACTIVE_CATEGORIES.BG
+					)) || [];
+				const isActiveCategory = activeCategories.find(
+					(categoryName) => categoryName === key
+				);
+
+				$accordionItem.attr('data-category', key);
+
+				if (isActiveCategory) {
+					$accordionItem.addClass('active');
+					await loadCategoryContent(
+						$accordionItem,
+						key,
+						Tile.TileType.BG
+					);
+				}
+				logger('accordionItem', $accordionItem);
+				logger('accordionContainer', $accordionContainer);
+				$accordionContainer.append($accordionItem);
+			});
+		}
+
 		// Function to load the tiles into the accordion item
 		async function loadCategoryContent(item, categoryKey, tileType) {
 			// Clear previous data
 
 			// Find the tiles from your preloaded data
-			const key =
-				tileType === Tile.TileType.BG
-					? 'bgs'
-					: tileType === Tile.TileType.NPC
-					? 'npcs'
-					: tileType === Tile.TileType.FOCUS
-					? 'focus'
-					: 'vfxs';
-			const tiles = instance[key][categoryKey] || [];
 
+			const tiles = instance.modeIsFavourite
+				? (await instance.getFilteredBgs()) || {}
+				: (await instance.getUnfilteredBgs()) || {};
+
+			if (!tiles[categoryKey]) {
+				return;
+			}
 			const accordionData = document.createElement('div');
 			accordionData.classList.add('accordion-data');
 
-			for (const tile of tiles) {
+			for (const tile of tiles[categoryKey]) {
 				accordionData.innerHTML += `
 						<div
 							class="accordion-data-item"
@@ -471,11 +670,17 @@ export class MindblownUI extends FormApplication {
 							background-size: cover;
 							background-color: black;
 							"
-							data-tileId="${tile.id}"
+							data-tileid="${tile.id}"
 							data-category="${categoryKey}"
-							data-index="${tiles.indexOf(tile)}"
-							data-tileType="${tileType}"
-						></div>
+							data-index="${tiles[categoryKey].indexOf(tile)}"
+							data-tiletype="${tileType}"
+							data-mediatype="${tile.mediaType}" 
+							data-src="${tile.path}"
+						><div class="media-tooltip"></div>
+						<span class="setIsFavourite" class="active">
+						<i class="fa-regular fa-star"></i><i class="fa-solid fa-star"></i>
+						</span>
+						</div>
 						`;
 
 				$(item).append(accordionData);

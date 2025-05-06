@@ -1,0 +1,74 @@
+{
+	"behaviours": [
+		{
+			"enabled": true,
+			"priority": 10000,
+			"maxLifeTime": 10,
+			"timeVariance": 5,
+			"name": "LifeBehaviour"
+		},
+		{
+			"enabled": true,
+			"priority": 100,
+			"trailingEnabled": false,
+			"spawnAlongTrail": false,
+			"trailSpeed": 1,
+			"trailRepeat": false,
+			"trailStart": 0,
+			"customPoints": [
+				{
+					"spawnType": "Ring",
+					"radius": 500,
+					"position": { "x": 0, "y": 0 },
+					"positionVariance": { "x": 500, "y": 50 }
+				}
+			],
+			"name": "SpawnBehaviour"
+		},
+		{
+			"enabled": true,
+			"priority": 100,
+			"velocity": { "x": 0, "y": 0 },
+			"velocityVariance": { "x": 50, "y": 50 },
+			"acceleration": { "x": 0, "y": 0 },
+			"accelerationVariance": { "x": 0, "y": 0 },
+			"name": "PositionBehaviour"
+		},
+		{
+			"enabled": true,
+			"priority": 0,
+			"sizeStart": { "x": 115, "y": 15 },
+			"sizeEnd": { "x": 4.4, "y": 4.5 },
+			"startVariance": 2.4,
+			"endVariance": 5,
+			"maxSize": { "x": 4.5, "y": 4.5 },
+			"uniformScaling": true,
+			"xScalingFunction": "linear",
+			"yScalingFunction": "linear",
+			"name": "SizeBehaviour"
+		},
+		{
+			"enabled": true,
+			"priority": 0,
+			"start": { "_r": 229, "_g": 229, "_b": 178, "_alpha": 1 },
+			"end": { "_r": 231, "_g": 193, "_b": 78, "_alpha": 0 },
+			"startVariance": { "_r": 0, "_g": 0, "_b": 0, "_alpha": 1 },
+			"endVariance": { "_r": 0, "_g": 0, "_b": 0, "_alpha": 1 },
+			"sinus": true,
+			"name": "ColorBehaviour"
+		},
+		{
+			"enabled": true,
+			"priority": 0,
+			"rotation": 0.1,
+			"variance": 0.2,
+			"clockwise": true,
+			"name": "RotationBehaviour"
+		}
+	],
+	"emitController": { "_emitPerSecond": 50, "name": "UniformEmission" },
+	"duration": -1,
+	"alpha": 0.05,
+	"anchor": { "x": 0, "y": 0 },
+	"blendMode": "0"
+}

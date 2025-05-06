@@ -20,6 +20,8 @@ export default {
 	BGS_DIR: 'bgDir',
 	NPCS_DIR: 'npcsDir',
 	FOCUS_DIR: 'focusDir',
+	HIDDEN_STAGE_FOR_GM: 'gmHideStage',
+	HIDDEN_STAGE_FOR_PLAYERS: 'playersHideStage',
 	ON_AIR: 'onAir',
 	ACTIVE_CATEGORIES: {
 		BG: 'activeBGs',

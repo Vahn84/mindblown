@@ -8,12 +8,12 @@ export class Stage {
 			alpha: 1,
 		},
 		NPC: {
-			width: 400,
-			height: 800,
-			screenWidth: 1920,
-			screenHeight: 1080,
-			pX: 300,
-			pY: 280,
+			width: 800,
+			height: 1300,
+			screenWidth: 3008,
+			screenHeight: 1692,
+			pX: 500,
+			pY: 392,
 			anchor: { x: 0, y: 0 },
 			visible: false,
 			alpha: 1,
@@ -40,6 +40,21 @@ export class Stage {
 			visible: false,
 			alpha: 1,
 		},
+		LIGHT: {
+			shape: 'circle',
+			blendMode: PIXI.BLEND_MODES.ADD,
+			radius: 256,
+			color: 0xffffff,
+			animated: 'pulse',
+			baseScale: 1,
+			screenWidth: 1920,
+			screenHeight: 1080,
+			pX: 960,
+			pY: 540,
+			anchor: { x: 0, y: 0 },
+			visible: false,
+			alpha: 0.3,
+		},
 	};
 
 	constructor(bg = null) {
@@ -52,6 +67,7 @@ export class Stage {
 			this.id = `stage_${new Date().getTime()}`;
 		}
 		this.weather = null;
+		this.lights = [];
 	}
 
 	setBg(bg) {
@@ -83,7 +99,7 @@ export class Stage {
 			);
 			if (!focus.pixiOptionsRuntime) {
 				this.focus.pixiOptionsRuntime = structuredClone(
-					Stage.PIXI_TILE_PRESETS.NPC
+					Stage.PIXI_TILE_PRESETS.FOCUS
 				);
 			}
 		}
@@ -99,10 +115,49 @@ export class Stage {
 			this.vfx.pixiOptions = structuredClone(Stage.PIXI_TILE_PRESETS.VFX);
 			if (!vfx.pixiOptionsRuntime) {
 				this.vfx.pixiOptionsRuntime = structuredClone(
-					Stage.PIXI_TILE_PRESETS.NPC
+					Stage.PIXI_TILE_PRESETS.VFX
 				);
 			}
-			
+		}
+	}
+
+	addLight(light) {
+		if (light) {
+			light.pixiOptions = structuredClone(Stage.PIXI_TILE_PRESETS.LIGHT);
+			if (!light.pixiOptionsRuntime) {
+				light.pixiOptionsRuntime = structuredClone(
+					Stage.PIXI_TILE_PRESETS.LIGHT
+				);
+			}
+		}
+
+		this.lights.push(light);
+	}
+
+	setLights(lights) {
+		this.lights = lights;
+		if (this.lights) {
+			this.lights.forEach((light) => {
+				light.pixiOptions = structuredClone(
+					Stage.PIXI_TILE_PRESETS.LIGHT
+				);
+				if (!light.pixiOptionsRuntime) {
+					light.pixiOptionsRuntime = structuredClone(
+						Stage.PIXI_TILE_PRESETS.LIGHT
+					);
+				}
+			});
+		}
+	}
+
+	removeLight(light) {
+		if (light) {
+			this.lights = this.lights.filter((l) => l.id !== light.id);
+		}
+	}
+	getLightById(id) {
+		if (this.lights) {
+			return this.lights.filter((l) => l.id !== id);
 		}
 	}
 
@@ -113,6 +168,7 @@ export class Stage {
 		_stage.setFocus(stage.focus);
 		_stage.setVfx(stage.vfx);
 		_stage.setWeather(stage.weather);
+		_stage.setLights(stage.lights);
 		_stage.id = stage.id;
 		return _stage;
 	}

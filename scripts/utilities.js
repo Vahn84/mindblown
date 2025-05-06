@@ -37,6 +37,22 @@ export async function syncMediaDirectory(dirCode, tileType) {
 				category.splice(i, 1);
 				i--;
 			}
+
+			// let isImg = isImage(category[i]?.path);
+			// if(!category[i]?.thumbnail.includes('/video-thumbs/') && isImg) {
+			// 	let thumb = await createThumbnail(category[i]?.path, {
+			// 		width: 500,
+			// 		height: 300,
+			// 		center: true,
+			// 	});
+			// 	if (thumb) {
+			// 		category[i].thumbnail = thumb;
+			// 		logger('Thumbnail created:', category[i].thumbnail);
+			// 	} else {
+			// 		errorLogger('Error creating thumbnail:', category[i]);
+			// 	}
+			// }
+			
 		}
 	}
 	const dirs = folders.dirs.map((dir) => {
@@ -84,52 +100,18 @@ export async function syncMediaDirectory(dirCode, tileType) {
 							category
 						);
 
-						if (tile.mediaType === Tile.MediaType.VIDEO) {
-							try {
-								const thumbnail =
-									await game.video.createThumbnail(path, {
-										width: 711,
-										height: 400,
-									});
+						let thumb = await createThumbnail(path, {
+							width: 500,
+							height: 300,
+							center: true,
+						});
 
-								if (thumbnail) {
-									logger('Thumbnail created:', thumbnail);
-									let fileName =
-										decodeURIComponent(path)
-											.split('/')
-											.pop()
-											.replace(/\.[^/.]+$/, '') + '.jpg';
-									const file = await fetch(thumbnail).then(
-										(r) => r.blob()
-									);
+						if (thumb) {
+							tile.thumbnail = thumb;
 
-									const response = await FilePicker.upload(
-										'data',
-										'worlds/aetherium/video-thumbs',
-										new File([file], fileName, {
-											type: 'image/jpeg',
-										}),
-										{},
-										{}
-									);
-									if (response) {
-										logger('Thumbnail uploaded:', response);
-										tile.thumbnail = response.path;
-									} else {
-										throw new Error(
-											'Thumbnail not uploaded'
-										);
-									}
-								} else {
-									throw new Error('Thumbnail not created');
-								}
-							} catch (error) {
-								errorLogger('Error creating thumbnail:', error);
-							}
+							tiles[category].push(tile);
+							newDataCount++;
 						}
-
-						tiles[category].push(tile);
-						newDataCount++;
 					}
 				}
 			}
@@ -145,6 +127,43 @@ export async function syncMediaDirectory(dirCode, tileType) {
 	}
 	game.user.setFlag(CONFIG.MOD_NAME, tileType, tiles);
 	return tiles;
+}
+
+async function createThumbnail(path, options) {
+	try {
+		const thumbnail = await game.video.createThumbnail(path, options);
+
+		if (thumbnail) {
+			logger('Thumbnail created:', thumbnail);
+			let fileName =
+				decodeURIComponent(path)
+					.split('/')
+					.pop()
+					.replace(/\.[^/.]+$/, '') + '.png';
+			const file = await fetch(thumbnail).then((r) => r.blob());
+
+			const response = await FilePicker.upload(
+				'data',
+				'worlds/aetherium/video-thumbs',
+				new File([file], fileName, {
+					type: 'image/jpeg',
+				}),
+				{},
+				{}
+			);
+			if (response) {
+				logger('Thumbnail uploaded:', response);
+				return response.path;
+			} else {
+				throw new Error('Thumbnail not uploaded');
+			}
+		} else {
+			throw new Error('Thumbnail not created');
+		}
+	} catch (error) {
+		errorLogger('Error creating thumbnail:', error);
+		return null;
+	}
 }
 
 export async function saveCurrentlyPlaying(stage) {

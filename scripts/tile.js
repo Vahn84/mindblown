@@ -7,11 +7,12 @@ export class Tile {
 		NPC: 'NPC',
 		FOCUS: 'FOCUS',
 		VFX: 'VFX',
+		LIGHT: 'LIGHT',
 	};
 	static MediaType = {
 		IMAGE: 'IMAGE',
 		VIDEO: 'VIDEO',
-		PARTICLES: 'PARTICLES',
+		PIXIVFX: 'PIXIVFX',
 	};
 
 	constructor(name, path, tileType, mute, loop, category) {
@@ -28,7 +29,7 @@ export class Tile {
 				? Tile.MediaType.IMAGE
 				: isVideo(this.path)
 				? Tile.MediaType.VIDEO
-				: Tile.MediaType.PARTICLES
+				: Tile.MediaType.PIXIVFX
 			: null;
 		this.isPlaying = false;
 		this.order = -1;
@@ -36,6 +37,7 @@ export class Tile {
 			this.mediaType === Tile.MediaType.IMAGE ? this.path : null;
 		this.isDefault = false;
 		this.pixiOptions = null;
+		this.isFavourite = false;
 	}
 
 	/**

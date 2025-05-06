@@ -41,13 +41,6 @@ export async function setupModule() {
 					(item) => item === category
 				);
 
-				logger(
-					'isActiveCategory',
-					activeCategories,
-					category,
-					tileType,
-					isActive
-				);
 				if (isActive) {
 					return options.fn(this); // Render the block
 				} else {
@@ -55,6 +48,10 @@ export async function setupModule() {
 				}
 			}
 		);
+
+		Handlebars.registerHelper('ifEquals', function (arg1, arg2, options) {
+			return arg1 == arg2 ? options.fn(this) : options.inverse(this);
+		});
 
 		Handlebars.registerHelper(
 			'currentlyPlaying',
@@ -135,33 +132,50 @@ export async function setupModule() {
 }
 
 export function initSettings() {
-	if (IS_GM()) {
-		game.settings.register(CONFIG.MOD_NAME, CONFIG.BGS_DIR, {
-			name: 'Background Source Directory',
-			hint: 'Set the directory where the background images are stored.',
-			scope: 'world',
-			config: true,
-			type: String,
-			filePicker: 'folder',
-		});
+	// if (IS_GM()) {
+	game.settings.register(CONFIG.MOD_NAME, CONFIG.BGS_DIR, {
+		name: 'Background Source Directory',
+		hint: 'Set the directory where the background images are stored.',
+		scope: 'world',
+		config: true,
+		type: String,
+		filePicker: 'folder',
+	});
 
-		game.settings.register(CONFIG.MOD_NAME, CONFIG.NPCS_DIR, {
-			name: 'Npcs Source Directory',
-			hint: 'Set the directory where the npc images are stored.',
-			scope: 'world',
-			config: true,
-			type: String,
-			filePicker: 'folder',
-		});
-		game.settings.register(CONFIG.MOD_NAME, CONFIG.FOCUS_DIR, {
-			name: 'Focus Source Directory',
-			hint: 'Set the directory where the visual focus images are stored.',
-			scope: 'world',
-			config: true,
-			type: String,
-			filePicker: 'folder',
-		});
-	}
+	game.settings.register(CONFIG.MOD_NAME, CONFIG.NPCS_DIR, {
+		name: 'Npcs Source Directory',
+		hint: 'Set the directory where the npc images are stored.',
+		scope: 'world',
+		config: true,
+		type: String,
+		filePicker: 'folder',
+	});
+	game.settings.register(CONFIG.MOD_NAME, CONFIG.FOCUS_DIR, {
+		name: 'Focus Source Directory',
+		hint: 'Set the directory where the visual focus images are stored.',
+		scope: 'world',
+		config: true,
+		type: String,
+		filePicker: 'folder',
+	});
+	game.settings.register(CONFIG.MOD_NAME, CONFIG.HIDDEN_STAGE_FOR_GM, {
+		name: 'hideStageForGM',
+		hint: 'Toggle Stage visibility for GM',
+		scope: 'world',
+		config: true,
+		type: Boolean,
+	});
+	game.settings.register(CONFIG.MOD_NAME, CONFIG.HIDDEN_STAGE_FOR_PLAYERS, {
+		name: 'hideStageForPlayers',
+		hint: 'Toggle Stage visibility for Players',
+		scope: 'world',
+		config: true,
+		type: Boolean,
+	});
+	game.settings.register(CONFIG.MOD_NAME, CONFIG.CURRENT_STAGE, {
+		scope: 'world',
+	});
+	// }
 }
 
 export function openMindblowUI() {

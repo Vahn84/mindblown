@@ -1,3 +1,36 @@
+#interface #players.app,
+#interface #hotbar-directory-controls,
+#interface #hotbar-lock,
+#interface #hotbar-page-controls,
+#action-bar #macro-list,
+#action-bar #macro-list li {
+	background: transparent !important;
+	box-shadow: none !important;
+	border: none !important;
+}
+
+#smalltime-app,
+#smalltime-app .arrow,
+#smalltime-app #displayContainer,
+#smalltime-app #slideContainer,
+#smalltime-app.show-date #dateDisplay,
+#smalltime-app #dragHandle {
+	background: transparent !important;
+	box-shadow: none !important;
+	border: none !important;
+}
+
+.remove-foundry-details {
+	box-shadow: none !important;
+	background: transparent !important;
+	border: none !important;
+}
+
+#mindblow-floating-button {
+	position: fixed;
+	bottom: 0px;
+}
+
 #mbQuickInsert {
 	border-width: 0px;
 	margin: 0px;
@@ -18,7 +51,7 @@
 
 #mindblown {
 	position: fixed;
-	bottom: 50px;
+	bottom: 0px;
 	top: auto;
 	left: 0;
 	width: 100%;
@@ -48,6 +81,10 @@ canvas#mbCanvas {
 	transition: opacity 0.5s ease-in-out;
 }
 
+canvas#mbCanvas.hidden {
+	display: none;
+}
+
 .mindblown-ui .column-wrapper.mindblown-accordion-column {
 	margin: 0 100px;
 }
@@ -55,6 +92,37 @@ canvas#mbCanvas {
 	background: #b7b7b71b;
 	backdrop-filter: blur(5px);
 }
+
+.mindblown-ui #bgsWrapper #filterFavourites {
+	cursor: pointer;
+	margin-left: 2px;
+}
+
+.mindblown-ui #bgsWrapper #filterFavourites:hover {
+	background-color: #c9a84c;
+}
+
+.mindblown-ui #bgsWrapper .setIsFavourite.active i.fa-solid.fa-solid,
+.mindblown-ui #bgsWrapper .setIsFavourite i.fa-regular.fa-star,
+.mindblown-ui #bgsWrapper #filterFavourites.active i.fa-solid.fa-solid,
+.mindblown-ui #bgsWrapper #filterFavourites i.fa-regular.fa-star {
+	display: flex;
+}
+
+.mindblown-ui #bgsWrapper .setIsFavourite i.fa-solid.fa-star,
+.mindblown-ui #bgsWrapper .setIsFavourite.active i.fa-regular.fa-star,
+.mindblown-ui #bgsWrapper #filterFavourites i.fa-solid.fa-star,
+.mindblown-ui #bgsWrapper #filterFavourites.active i.fa-regular.fa-star {
+	display: none;
+}
+
+.mindblown-ui #bgsWrapper .setIsFavourite {
+	position: relative;
+	right: 5px;
+	top: 5px;
+	cursor: pointer;
+}
+
 .mindblown-ui #npcsWrapper.mindblown-accordion-wrapper,
 .mindblown-ui #focusWrapper.mindblown-accordion-wrapper {
 	background: #b7b7b71b;
@@ -125,7 +193,8 @@ canvas#mbCanvas {
 .mindblown-ui
 	.horizontal-accordion-one
 	.mindblown-list-header
-	.weatherToolbar .weather-button.hidden {
+	.weatherToolbar
+	.weather-button.hidden {
 	display: none;
 }
 
@@ -186,8 +255,16 @@ canvas#mbCanvas {
 	.horizontal-accordion-one
 	.mindblown-list-header
 	.weatherToolbar
+	.weather-button.sandstorm {
+	background-color: #c9a84c;
+}
+
+.mindblown-ui
+	.horizontal-accordion-one
+	.mindblown-list-header
+	.weatherToolbar
 	.weather-button.thunder {
-	background-color: #ffc107;
+	background-color: #4d07ff;
 }
 .mindblown-ui
 	.horizontal-accordion-one
@@ -195,6 +272,13 @@ canvas#mbCanvas {
 	.weatherToolbar
 	.weather-button.vfx {
 	background-color: #1e1d1d;
+}
+.mindblown-ui
+	.horizontal-accordion-one
+	.mindblown-list-header
+	.weatherToolbar
+	.weather-button.lights {
+	background-color: #ffc107;
 }
 
 .mindblown-ui
@@ -226,7 +310,7 @@ canvas#mbCanvas {
 }
 
 .mindblown-ui .horizontal-accordion-one .accordion-container {
-	width: 100%;
+	width: max-content;
 	position: relative;
 	display: flex;
 	flex-direction: row;
@@ -234,7 +318,8 @@ canvas#mbCanvas {
 	padding: 0;
 	margin: 0;
 	height: 100%;
-	overflow: scroll;
+	overflow: visible;
+	/* overflow-x: hidden; */
 }
 .mindblown-ui
 	.horizontal-accordion-one
@@ -249,7 +334,7 @@ canvas#mbCanvas {
 	flex-direction: row;
 	height: 100%;
 	align-items: center;
-	width: 60px;
+	width: 150px;
 	transition: all ease-in 1s;
 }
 
@@ -269,12 +354,13 @@ canvas#mbCanvas {
 	justify-content: center;
 	flex-direction: column;
 	height: 100%;
-	width: 60px;
-	min-width: 60px;
+	width: 150px;
+	min-width: 150px;
 	align-items: center;
 	transition: all ease-in 0.4s;
 	/* background-blend-mode: luminosity; */
 	cursor: pointer;
+	background: black;
 }
 .mindblown-ui
 	.horizontal-accordion-one
@@ -296,8 +382,8 @@ canvas#mbCanvas {
 	flex-direction: column;
 	align-items: center;
 	height: 100%;
-	backdrop-filter: blur(2px);
-	background: transparent;
+	/* backdrop-filter: blur(2px); */
+	background: rgba(0, 0, 0, 0.4);
 }
 
 .mindblown-ui
@@ -309,7 +395,7 @@ canvas#mbCanvas {
 	color: #ffffff;
 	font-family: Arial, Helvetica, sans-serif;
 	font-size: 15px;
-	transform: rotate(-90deg);
+	/* transform: rotate(-90deg); */
 	display: flex;
 	width: fit-content;
 	/* text-wrap: nowrap; */
@@ -322,26 +408,30 @@ canvas#mbCanvas {
 	.accordion-container
 	.accordion-item
 	.accordion-data {
-	width: 0;
-
-	overflow: hidden;
-	opacity: 0;
-	height: fit-content;
+	position: relative;
+	width: max-content;
+	overflow-x: visible;
+	flex-wrap: nowrap;
+	display: flex;
 }
+
+.accordion-data-scrollable {
+	display: flex;
+	flex-direction: row;
+	position: relative;
+	left: 0;
+	top: 0;
+	will-change: transform;
+}
+
 .mindblown-ui
 	.horizontal-accordion-one
 	.accordion-container
 	.accordion-item.active
 	.accordion-data {
-	display: flex;
-	flex-wrap: nowrap;
-	flex-direction: row;
-	/* animation: open 0.4s; */
-	width: auto;
-
-	box-sizing: border-box;
-	opacity: 1;
-	overflow: hidden;
+	position: relative;
+	overflow-x: visible;
+	width: 100%;
 	background-color: transparent;
 	height: 80%;
 }
@@ -353,7 +443,7 @@ canvas#mbCanvas {
 	.accordion-data-item {
 	/* background-blend-mode: luminosity; */
 	min-width: 100px;
-	min-height: 100%;
+	min-height: 100px;
 	transition: all ease-in 0.4s;
 	margin-left: 10px;
 	border-radius: 8px;
@@ -389,6 +479,37 @@ canvas#mbCanvas {
 	min-width: 150px;
 	background: #333 !important;
 }
+
+.media-tooltip {
+	position: absolute;
+	z-index: 9999;
+	pointer-events: none;
+	border: 1px solid #444;
+	background: #000;
+	padding: 4px;
+	border-radius: 6px;
+	box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+	width: 500px;
+	height: 300px;
+	overflow: hidden;
+	display: none;
+	top: -300px;
+	justify-content: center;
+	align-items: center;
+}
+
+.media-tooltip.active {
+	display: flex;
+}
+
+.media-tooltip img,
+.media-tooltip video {
+	display: flex;
+	width: 100%;
+	height: auto;
+	max-height: 300px;
+}
+
 @keyframes open {
 	0% {
 		width: 0px;
@@ -513,13 +634,14 @@ canvas#mbCanvas {
 	border-top-left-radius: 12px;
 	border-top-right-radius: 12px;
 	overflow: hidden;
-	transition: max-height 0.5s ease;
-	max-height: 50px;
+	transition: height 0.5s ease;
+	height: 50px;
 	box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.4);
 }
 
 .mindblown-panel-container.open {
-	max-height: 600px;
+	will-change: height;
+	height: 600px;
 }
 
 .mindblown-panel-toggle {
@@ -533,7 +655,7 @@ canvas#mbCanvas {
 
 .mindblown-panel-content {
 	overflow-y: auto;
-	max-height: 500px;
+	height: 100%;
 	padding: 10px;
 }
 
@@ -542,6 +664,8 @@ canvas#mbCanvas {
 	list-style: none;
 	padding: 0;
 	margin: 0;
+	padding-bottom: 50px;
+	height: fit-content;
 }
 
 .mindblown-accordion-item {
@@ -557,13 +681,13 @@ canvas#mbCanvas {
 }
 
 .mindblown-accordion-body {
-	max-height: 0;
+	height: auto;
 	overflow: hidden;
-	transition: max-height 0.3s ease;
+	/* transition: height 0.3s ease; */
 }
 
-.mindblown-accordion-item.open .mindblown-accordion-body {
-	max-height: 500px;
+.mindblown-accordion-item.open .mindblown-accordion-head {
+	background: #a52a2a;
 }
 
 /* Grid inside the accordion */
