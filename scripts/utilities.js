@@ -33,7 +33,11 @@ export async function syncMediaDirectory(dirCode, tileType) {
 	for (let cIndex in tiles) {
 		let category = tiles[cIndex];
 		for (var i = 0; i < category.length; i++) {
-			if (category[i] === null) {
+			let tile = category[i];
+			if (tile === null || !UrlExists(tile.path)) {
+				ui.notifications.info(
+					`REMOVED TILE: ${tile.name} because it doesn't exist anymore or its path changed`
+				);
 				category.splice(i, 1);
 				i--;
 			}
@@ -52,7 +56,6 @@ export async function syncMediaDirectory(dirCode, tileType) {
 			// 		errorLogger('Error creating thumbnail:', category[i]);
 			// 	}
 			// }
-			
 		}
 	}
 	const dirs = folders.dirs.map((dir) => {
@@ -102,8 +105,9 @@ export async function syncMediaDirectory(dirCode, tileType) {
 
 						let thumb = await createThumbnail(path, {
 							width: 500,
-							height: 300,
+							height: 500,
 							center: true,
+							ty: 0,
 						});
 
 						if (thumb) {
@@ -120,9 +124,7 @@ export async function syncMediaDirectory(dirCode, tileType) {
 	logger(`New ${tileType} data`, tiles);
 	if (newDataCount === 0) {
 		ui.notifications.info(
-			ui.notifications.info(
-				`No new ${tileType} data found in ${directoryPath}.`
-			)
+			`No new ${tileType} data found in ${directoryPath}.`
 		);
 	}
 	game.user.setFlag(CONFIG.MOD_NAME, tileType, tiles);
@@ -144,7 +146,7 @@ async function createThumbnail(path, options) {
 
 			const response = await FilePicker.upload(
 				'data',
-				'worlds/aetherium/video-thumbs',
+				'worlds/aetherium/thumbs',
 				new File([file], fileName, {
 					type: 'image/jpeg',
 				}),
@@ -180,4 +182,11 @@ export async function resetCurrentlyPlaying() {
 	if (currentPlaying) {
 		await game.user.unsetFlag(CONFIG.MOD_NAME, CONFIG.ON_AIR);
 	}
+}
+
+function UrlExists(url) {
+	var http = new XMLHttpRequest();
+	http.open('HEAD', url, false);
+	http.send();
+	return http.status != 404;
 }

@@ -94,6 +94,16 @@ export class StageManager extends EventEmitter {
 		if (stage.weather) {
 			await this.setWeather(stage.weather);
 		}
+
+		const darkness = canvas.scene?.environment?.darknessLevel || 0;
+		this.setDarkness(darkness);
+
+		if (stage.lights && stage.lights.length > 0) {
+			for (let light of stage.lights) {
+				await this.addLight(light);
+			}
+		}
+
 		const keyName = IS_GM()
 			? CONFIG.HIDDEN_STAGE_FOR_GM
 			: CONFIG.HIDDEN_STAGE_FOR_PLAYERS;
@@ -224,26 +234,27 @@ export class StageManager extends EventEmitter {
 		}
 	}
 
-	async addLight() {
+	async addLight(light = null) {
 		if (!this.stage) {
 			this.initStage();
 		}
 		if (!this.stage.bg) {
 			await this.setDefaultBg();
 		}
-		const light = new Tile(
-			`LIGHT_${new Date().getTime()}`,
-			null,
-			Tile.TileType.LIGHT
-		);
-		this.stage.addLight(light);
-		await PIXIHandler.addLightSourceOnStage(
-			this.PIXIApp,
-			this.stage.lights[this.stage.lights.length - 1]
-		);
-		if (IS_GM()) {
-			await this.saveStage(this.stage, 'setLights');
+		let _light = light;
+		if (!_light) {
+			_light = new Tile(
+				`${new Date().getTime()}`,
+				null,
+				Tile.TileType.LIGHT
+			);
+			this.stage.addLight(_light);
+			if (IS_GM()) {
+				await this.saveStage(this.stage, 'setLights');
+			}
 		}
+
+		await PIXIHandler.addLightSourceOnStage(this.PIXIApp, _light);
 	}
 
 	async removeLight(light) {
@@ -251,7 +262,7 @@ export class StageManager extends EventEmitter {
 	}
 
 	async getLightById(id) {
-		this.stage.getLightById(id);
+		return this.stage.getLightById(id);
 	}
 
 	async setLights(lights) {
@@ -322,6 +333,16 @@ export class StageManager extends EventEmitter {
 
 	async setTileOnStage(tileType, tile) {
 		await PIXIHandler.setTileOnStage(this.PIXIApp, tileType, tile);
+	}
+
+	async setDarkness(darkness) {
+		if (this.stage && this.PIXIApp && this.PIXIApp.stage) {
+			this.stage.setDarkness(darkness);
+			PIXIHandler.setDarknessOnStage(this.PIXIApp, this.stage.darkness);
+			if (IS_GM()) {
+				await this.saveStage(this.stage, 'setDarkness');
+			}
+		}
 	}
 
 	async clearBg() {
@@ -430,10 +451,14 @@ export class StageManager extends EventEmitter {
 	async saveStage(stage, action, actionTileType) {
 		logger('saveStage', stage, action, actionTileType);
 		if (!stage) {
+			if(IS_GM()){
+				await game.settings.set(CONFIG.MOD_NAME, CONFIG.CURRENT_STAGE, null);
+			}
 			game.socket.emit(`module.${CONFIG.MOD_NAME}`, {
 				action: 'destroy',
 				stage: null,
 			});
+			
 		} else {
 			await game.settings.set(
 				CONFIG.MOD_NAME,
@@ -461,7 +486,7 @@ export class StageManager extends EventEmitter {
 			this._instance = null;
 		}
 		this.stage = null;
-		await game.settings.set(CONFIG.MOD_NAME, CONFIG.CURRENT_STAGE, null);
+		
 
 		//SOCKET
 		if (IS_GM()) {
@@ -480,9 +505,8 @@ export class StageManager extends EventEmitter {
 		let keyName = forGM
 			? CONFIG.HIDDEN_STAGE_FOR_GM
 			: CONFIG.HIDDEN_STAGE_FOR_PLAYERS;
-		let toHide = !game.settings.get(CONFIG.MOD_NAME, keyName) || false;
+		let toHide = game.settings.get(CONFIG.MOD_NAME, keyName) || false;
 		if (IS_GM()) {
-			await game.settings.set(CONFIG.MOD_NAME, keyName, toHide);
 			if (!forGM) {
 				game.socket.emit(`module.${CONFIG.MOD_NAME}`, {
 					action: 'toggleStageVisibility',
@@ -550,11 +574,7 @@ export class StageManager extends EventEmitter {
 					break;
 			}
 
-			await game.settings.set(
-				CONFIG.MOD_NAME,
-				CONFIG.CURRENT_STAGE,
-				stage
-			);
+
 		}
 	}
 }

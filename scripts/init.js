@@ -57,6 +57,13 @@ Hooks.once('init', async () => {
 	await setupModule();
 });
 
+Hooks.on("updateScene", (scene, changes) => {
+	if (changes?.environment?.darknessLevel !== undefined) {
+	  console.log("Darkness changed to", changes?.environment?.darknessLevel);
+	  StageManager.shared().setDarkness(changes?.environment?.darknessLevel)
+	}
+  });
+
 Hooks.on('getSceneControlButtons', (controls) => {
 	// Check if a group already exists or create your own
 	if (!game.user.isGM) {
@@ -95,6 +102,8 @@ Hooks.on('getSceneControlButtons', (controls) => {
 				title: 'Hide Stage for Players',
 				icon: 'fas fa-eye-slash',
 				onClick: () => {
+					let toHide = !game.settings.get(CONFIG.MOD_NAME, CONFIG.HIDDEN_STAGE_FOR_PLAYERS)
+					game.settings.set(CONFIG.MOD_NAME, keyName, toHide);
 					StageManager.shared().toggleStageVisibility(false);
 				},
 				toggle: true,
@@ -135,7 +144,7 @@ Hooks.on('getSceneControlButtons', (controls) => {
 				title: 'Sync Media Folders',
 				icon: 'fas fa-arrows-rotate',
 				onClick: () => {
-					MindblownUI.getInstance().syncMediaFolders();
+					MindblownUI.getInstance().syncMedias();
 				},
 				button: true,
 			},

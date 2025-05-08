@@ -48,6 +48,24 @@ export async function setupModule() {
 				}
 			}
 		);
+		Handlebars.registerHelper(
+			'isFavoriteCategory',
+			function (favouriteBGs, category, tileType, options) {
+				if (!favouriteBGs || !category || !tileType) {
+					return options.inverse(this);
+				}
+
+				let isAlreadyFav = favouriteBGs.find(
+					(cat) => cat === category
+				);
+
+				if (isAlreadyFav) {
+					return options.fn(this); // Render the block
+				} else {
+					return options.inverse(this); // Else block ({{else}})
+				}
+			}
+		);
 
 		Handlebars.registerHelper('ifEquals', function (arg1, arg2, options) {
 			return arg1 == arg2 ? options.fn(this) : options.inverse(this);

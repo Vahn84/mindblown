@@ -32,6 +32,7 @@
       "
     >
       <div class="mindblown-list-title"><span>{{key}}</span></div>
+      <span class="setIsFavourite {{#isFavoriteCategory ../favouriteBGs key ../tileType.BG}}active{{/isFavoriteCategory}}"><i class="fa-regular fa-star"></i><i class="fa-solid fa-star"></i></span>
     </div>
     {{#isActiveCategory ../activeCategories key ../tileType.BG }}
     <div class="accordion-data">
@@ -52,7 +53,6 @@
           data-src="{{tile.path}}"
         >
         <div class="media-tooltip"></div>
-        <span class="setIsFavourite" class="active"><i class="fa-regular fa-star"></i><i class="fa-solid fa-star"></i></span>
         </div>
       {{/each}}
       </div>

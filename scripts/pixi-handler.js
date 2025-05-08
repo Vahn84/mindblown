@@ -54,12 +54,12 @@ export class PIXIHandler {
 		if (!_PIXIApp) {
 			_PIXIApp = new PIXI.Application({
 				resolution: 1,
-				autoDensity: true,
+				autoDensity: false,
 				resizeTo: window,
 				background: '#000000',
-				backgroundAlpha: 0,
 				antialias: false,
 			});
+			_PIXIApp.ticker.maxFPS = 30;
 		}
 
 		_PIXIApp.view.id = CONFIG.MB_CANVAS_ID;
@@ -83,6 +83,15 @@ export class PIXIHandler {
 			});
 		} catch (error) {
 			logger('Error unloading asset:', error);
+		}
+	}
+
+	static async setDarknessOnStage(PIXIApp, darkness) {
+		const lighting = PIXIApp.stage.getChildByName(
+			PIXIHandler.PIXI_WRAPPERS.LIGHT_ID
+		);
+		if (lighting) {
+			lighting.setDarknessLevel(PIXIApp, darkness);
 		}
 	}
 
@@ -302,6 +311,15 @@ export class PIXIHandler {
 
 			// newBlurryBgSprite = null;
 		}
+
+		// const lighting = new AmbientLightingManager({
+		// 	width: window.innerWidth,
+		// 	height: window.innerHeight,
+		// 	darkness: StageManager.shared().stage.darkness, // night
+		// });
+		// lighting.name = PIXIHandler.PIXI_WRAPPERS.LIGHT_ID;
+		// PIXIApp.stage.addChild(lighting);
+
 		StageManager.shared().setIsBgTransitioning(true);
 		PIXIApp.ticker.maxFPS = 30;
 		PIXIApp.ticker.add(PIXIHandler.bgTickerTransition, this);
@@ -586,16 +604,8 @@ export class PIXIHandler {
 			);
 		});
 		if (bg) {
-			PIXIHandler.setBgOnStage(PIXIApp, bg);
+			await PIXIHandler.setBgOnStage(PIXIApp, bg);
 		}
-
-		const lighting = new AmbientLightingManager({
-			width: originalWidth,
-			height: originalHeight,
-			darkness: 0.8, // night
-		});
-		lighting.name = PIXIHandler.PIXI_WRAPPERS.LIGHT_ID;
-		PIXIApp.stage.addChild(lighting);
 
 		// Add some lights
 	}
@@ -608,15 +618,39 @@ export class PIXIHandler {
 		const lightingContainer = PIXIApp.stage.getChildByName(
 			PIXIHandler.PIXI_WRAPPERS.LIGHT_ID
 		);
+		const bgContainer = PIXIApp.stage.getChildByName(
+			PIXIHandler.PIXI_WRAPPERS.BG_ID
+		);
 
+		const bgSprite = bgContainer.getChildByName(PIXIHandler.PIXI_DO.BG_ID);
 		const light = lightingContainer.addLight(PIXIApp, tile);
-		PIXIHandler.addControlButtons(light, tile.tileType);
+		// PIXIHandler.addControlButtons(light, tile.tileType);
+
+		let screenWidth = Math.max(
+			document.documentElement.clientWidth,
+			window.innerWidth || 0
+		);
+		let screenHeight = Math.max(
+			document.documentElement.clientHeight,
+			window.innerHeight || 0
+		);
+
+		// if (lightingContainer ) {
+		// 	lightingContainer.resize(
+		// 		PIXIApp,
+		// 		{
+		// 			screenWidth,
+		// 			screenHeight,
+		// 		},
+		// 		bgSprite
+		// 	);
+		// }
+		lightingContainer.updateLightMask(PIXIApp.renderer);
 		PIXIApp.ticker.maxFPS = 30;
 		PIXIApp.ticker.add(() => {
-			if (lightingContainer && lightingContainer.updateLightMask) {
-				lightingContainer.updateLightMask(PIXIApp.renderer);
-			}
+			lightingContainer.updateLightMask(PIXIApp.renderer);
 		});
+		PIXIApp.ticker.start();
 	}
 
 	static async ToggleWeatherEffectOnStage(
@@ -1223,34 +1257,29 @@ export class PIXIHandler {
 			const dy = pointer.y - resizeStart.y;
 			// Special handling for LIGHT tile type: scale instead of resize
 			if (type === Tile.TileType.LIGHT) {
-				const avgScaleDelta = (dx + dy) / 2;
-				const baseScale = tile.pixiOptions?.baseScale ?? 1;
-				const newScale = Math.max(0.1, baseScale + avgScaleDelta / 200); // Adjustable factor
-				sprite.scale.set(newScale);
-				// tile.pixiOptions.baseScale = newScale;
-				// return;
-			}
-			let newWidth = Math.max(10, origSize.width + dx);
-			let newHeight = Math.max(10, origSize.height + dy);
-			const aspect = origSize.width / origSize.height;
-			let forceProportional = true;
-			if (
-				event.data.originalEvent &&
-				(event.data.originalEvent.shiftKey ||
-					event.data.originalEvent.ctrlKey)
-			) {
-				forceProportional = false;
-			}
-			if (forceProportional) {
-				// Always keep aspect ratio unless Shift or Ctrl
-				if (Math.abs(dx) > Math.abs(dy)) {
-					newHeight = newWidth / aspect;
-				} else {
-					newWidth = newHeight * aspect;
+			} else {
+				let newWidth = Math.max(10, origSize.width + dx);
+				let newHeight = Math.max(10, origSize.height + dy);
+				const aspect = origSize.width / origSize.height;
+				let forceProportional = true;
+				if (
+					event.data.originalEvent &&
+					(event.data.originalEvent.shiftKey ||
+						event.data.originalEvent.ctrlKey)
+				) {
+					forceProportional = false;
 				}
+				if (forceProportional) {
+					// Always keep aspect ratio unless Shift or Ctrl
+					if (Math.abs(dx) > Math.abs(dy)) {
+						newHeight = newWidth / aspect;
+					} else {
+						newWidth = newHeight * aspect;
+					}
+				}
+				sprite.width = newWidth;
+				sprite.height = newHeight;
 			}
-			sprite.width = newWidth;
-			sprite.height = newHeight;
 			// Do not snap/jump: update immediately and keep anchor fixed
 		}
 
@@ -1262,15 +1291,15 @@ export class PIXIHandler {
 			origSize = null;
 			origPos = null;
 			lastPointer = null;
-			resizeHandle.data = null;
 			const stage = StageManager.shared()?.PIXIApp?.stage;
 			if (stage) {
 				stage.off('pointermove', onResizeMove);
 				stage.off('pointerup', onResizeEnd);
 				stage.off('pointerupoutside', onResizeEnd);
 			}
-			// Special handling for LIGHT tile type: persist scale as baseScale
-	
+			// Special handling for LIGHT tile type: persist scale as runtime scale and store handleScaleRatio
+
+			resizeHandle.data = null;
 			PIXIHandler.updateControlButtonsPosition(sprite, tile);
 			PIXIHandler.sendSpriteChangesToSocket(tile);
 		}
@@ -1304,6 +1333,15 @@ export class PIXIHandler {
 			.on('pointerup', () => {
 				sprite.dragging = false;
 				sprite.dragOffset = null;
+				if (tile.tileType === Tile.TileType.LIGHT) {
+					const stage = StageManager.shared()?.PIXIApp?.stage;
+					const lightingContainer = stage.getChildByName(
+						PIXIHandler.PIXI_WRAPPERS.LIGHT_ID
+					);
+					lightingContainer.updateLightMask(
+						StageManager.shared()?.PIXIApp.renderer
+					);
+				}
 				PIXIHandler.updateControlButtonsPosition(sprite, tile);
 				PIXIHandler.sendSpriteChangesToSocket(tile);
 			})
@@ -1375,15 +1413,13 @@ export class PIXIHandler {
 			const renderer = StageManager.shared().PIXIApp.renderer;
 			const screenWidth = renderer.width;
 			const screenHeight = renderer.height;
-			const scale = sprite.scale.x || 1;
 
 			PIXIHandler.storePixiRuntimeOptions(
 				isBgTransition,
 				tile,
 				sprite,
 				screenWidth,
-				screenHeight,
-				scale
+				screenHeight
 			);
 		}
 	}
@@ -1393,8 +1429,7 @@ export class PIXIHandler {
 		tile,
 		sprite,
 		screenWidth,
-		screenHeight,
-		scale = 1
+		screenHeight
 	) {
 		// Prevent feedback loop during window resize events
 		if (isBgTransition) return;
@@ -1408,7 +1443,7 @@ export class PIXIHandler {
 		tile.pixiOptionsRuntime.anchor = tile.pixiOptions.anchor;
 		tile.pixiOptionsRuntime.screenWidth = screenWidth;
 		tile.pixiOptionsRuntime.screenHeight = screenHeight;
-		tile.pixiOptionsRuntime.scale = scale;
+		// tile.pixiOptionsRuntime.scale = (sprite.scale.x	+ sprite.scale.y) / 2;
 	}
 
 	static async sendSpriteChangesToSocket(tile) {

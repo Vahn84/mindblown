@@ -41,19 +41,38 @@ export class Stage {
 			alpha: 1,
 		},
 		LIGHT: {
-			shape: 'circle',
-			blendMode: PIXI.BLEND_MODES.ADD,
-			radius: 256,
-			color: 0xffffff,
-			animated: 'pulse',
-			baseScale: 1,
-			screenWidth: 1920,
-			screenHeight: 1080,
-			pX: 960,
-			pY: 540,
-			anchor: { x: 0, y: 0 },
-			visible: false,
-			alpha: 0.3,
+			CIRCLE: {
+				shape: 'circle',
+				blendMode: PIXI.BLEND_MODES.ADD,
+				radius: 256,
+				color: 0xffffff,
+				animated: 'pulse',
+				baseScale: 1,
+				screenWidth: 1920,
+				screenHeight: 1080,
+				pX: 960,
+				pY: 540,
+				anchor: { x: 0, y: 0 },
+				visible: false,
+				alpha: 0.3,
+			},
+			CONE: {
+				shape: 'cone',
+				blendMode: PIXI.BLEND_MODES.ADD,
+				radius: 256,
+				angle: 90,
+				rotation: 0,
+				color: 0xffffff,
+				animated: 'pulse',
+				baseScale: 1,
+				screenWidth: 1920,
+				screenHeight: 1080,
+				pX: 0,
+				pY: 0,
+				anchor: { x: 0, y: 0 },
+				visible: false,
+				alpha: 0.3,
+			},
 		},
 	};
 
@@ -68,6 +87,7 @@ export class Stage {
 		}
 		this.weather = null;
 		this.lights = [];
+		this.darkness = 0;
 	}
 
 	setBg(bg) {
@@ -123,10 +143,10 @@ export class Stage {
 
 	addLight(light) {
 		if (light) {
-			light.pixiOptions = structuredClone(Stage.PIXI_TILE_PRESETS.LIGHT);
+			light.pixiOptions = structuredClone(Stage.PIXI_TILE_PRESETS.LIGHT.CONE);
 			if (!light.pixiOptionsRuntime) {
 				light.pixiOptionsRuntime = structuredClone(
-					Stage.PIXI_TILE_PRESETS.LIGHT
+					Stage.PIXI_TILE_PRESETS.LIGHT.CONE
 				);
 			}
 		}
@@ -139,11 +159,11 @@ export class Stage {
 		if (this.lights) {
 			this.lights.forEach((light) => {
 				light.pixiOptions = structuredClone(
-					Stage.PIXI_TILE_PRESETS.LIGHT
+					Stage.PIXI_TILE_PRESETS.LIGHT.CONE
 				);
 				if (!light.pixiOptionsRuntime) {
 					light.pixiOptionsRuntime = structuredClone(
-						Stage.PIXI_TILE_PRESETS.LIGHT
+						Stage.PIXI_TILE_PRESETS.LIGHT.CONE
 					);
 				}
 			});
@@ -157,8 +177,13 @@ export class Stage {
 	}
 	getLightById(id) {
 		if (this.lights) {
-			return this.lights.filter((l) => l.id !== id);
+			const filter = this.lights.filter((l) => l.id === id);
+			return filter.length > 0 ? filter[0] : null;
 		}
+	}
+
+	setDarkness(darkness) {
+		this.darkness = darkness;
 	}
 
 	static Build(stage) {

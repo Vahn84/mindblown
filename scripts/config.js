@@ -28,8 +28,13 @@ export default {
 		NPC: 'activeNPCs',
 		FOCUS: 'activeFocus',
 	},
-	DEFAULT_SPRITE_FRAME:'modules/mindblown/assets/textures/grey_frame.png',
-	DEFAULT_SPRITE_BG:'modules/mindblown/assets/textures/black-bg.png',
+	FAV_CATEGORIES: {
+		BG: 'favBGs',
+		NPC: 'favNPCs',
+		FOCUS: 'favFocus',
+	},
+	DEFAULT_SPRITE_FRAME: 'modules/mindblown/assets/textures/grey_frame.png',
+	DEFAULT_SPRITE_BG: 'modules/mindblown/assets/textures/black-bg.png',
 	CURRENT_STAGE: 'currentStage',
 	DOCK_REDUCED: 'dockReduced',
 };
