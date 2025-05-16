@@ -10,6 +10,8 @@ export default {
 		NPCS: 'modules/mindblown/templates/npcs.hbs',
 		BGS: 'modules/mindblown/templates/bgs.hbs',
 		FOCUS: 'modules/mindblown/templates/focus.hbs',
+		VFX: 'modules/mindblown/templates/vfx.hbs',
+		LIGHT: 'modules/mindblown/templates/light.hbs',
 	},
 	MB_MODE: {
 		EDIT: 'edit',
@@ -22,6 +24,7 @@ export default {
 	FOCUS_DIR: 'focusDir',
 	HIDDEN_STAGE_FOR_GM: 'gmHideStage',
 	HIDDEN_STAGE_FOR_PLAYERS: 'playersHideStage',
+	AMBIENT_LIGHTING_ENABLED: 'ambientLightingEnabled',
 	ON_AIR: 'onAir',
 	ACTIVE_CATEGORIES: {
 		BG: 'activeBGs',
@@ -37,4 +40,5 @@ export default {
 	DEFAULT_SPRITE_BG: 'modules/mindblown/assets/textures/black-bg.png',
 	CURRENT_STAGE: 'currentStage',
 	DOCK_REDUCED: 'dockReduced',
+	
 };

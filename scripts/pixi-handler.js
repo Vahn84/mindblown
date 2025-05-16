@@ -312,17 +312,53 @@ export class PIXIHandler {
 			// newBlurryBgSprite = null;
 		}
 
-		// const lighting = new AmbientLightingManager({
-		// 	width: window.innerWidth,
-		// 	height: window.innerHeight,
-		// 	darkness: StageManager.shared().stage.darkness, // night
-		// });
-		// lighting.name = PIXIHandler.PIXI_WRAPPERS.LIGHT_ID;
-		// PIXIApp.stage.addChild(lighting);
-
 		StageManager.shared().setIsBgTransitioning(true);
 		PIXIApp.ticker.maxFPS = 30;
 		PIXIApp.ticker.add(PIXIHandler.bgTickerTransition, this);
+	}
+
+	static async turnOffAmbientLighting(PIXIApp) {
+		const lightingContainer = PIXIApp.stage.getChildByName(
+			PIXIHandler.PIXI_WRAPPERS.LIGHT_ID
+		);
+		if (lightingContainer) {
+			lightingContainer.remove();
+			PIXIApp.stage.removeChild(lightingContainer);
+		}
+
+		StageManager.shared().setIsAmbientLightingOn(false);
+	}
+
+	static async turnOnAmbientLighting(PIXIApp) {
+		let lighting = PIXIApp.stage.getChildByName(
+			PIXIHandler.PIXI_WRAPPERS.LIGHT_ID
+		);
+
+		if (StageManager.shared().isBgTransitioning) {
+			StageManager.shared().addEventListener(
+				StageManager.EVENTS.BG_ENDED_TRANSITION,
+				async () => {
+					PIXIHandler.AddAmbientLightingManager(PIXIApp, lighting);
+				}
+			);
+			return;
+		} else {
+			PIXIHandler.AddAmbientLightingManager(PIXIApp, lighting);
+		}
+	}
+
+	static AddAmbientLightingManager(PIXIApp, lighting) {
+		if (!lighting) {
+			lighting = new AmbientLightingManager({
+				PIXIApp,
+				width: window.innerWidth,
+				height: window.innerHeight,
+				darkness: StageManager.shared().stage.darkness,
+			});
+			lighting.name = PIXIHandler.PIXI_WRAPPERS.LIGHT_ID;
+			PIXIApp.stage.addChild(lighting);
+			StageManager.shared().setIsAmbientLightingOn(true);
+		}
 	}
 
 	static async tileSpriteTickerTransition(
@@ -493,18 +529,14 @@ export class PIXIHandler {
 			}
 			StageManager.shared().setIsBgTransitioning(false);
 
-			const lighting = PIXIApp.stage.getChildByName('lighting');
-			if (lighting) {
-				PIXIApp.stage.setChildIndex(
-					lighting,
-					PIXIApp.stage.children.length - 1
-				);
-			}
-
 			StageManager.shared().dispatchEvent(
 				StageManager.EVENTS.BG_ENDED_TRANSITION,
 				{}
 			);
+
+			if (StageManager.shared().isAmbientLightingEnabled()) {
+				PIXIHandler.turnOnAmbientLighting(PIXIApp);
+			}
 		}
 	}
 
@@ -603,6 +635,39 @@ export class PIXIHandler {
 				true
 			);
 		});
+
+		PIXIApp.renderer.view.addEventListener('webglcontextrestored', () => {
+			const ambientLightingEnabled =
+				StageManager.shared().isAmbientLightingEnabled();
+			const ambientLightingManager = PIXIApp.stage.getChildByName(
+				PIXIHandler.PIXI_WRAPPERS.LIGHT_ID
+			);
+
+			const currentBgContainer = PIXIApp.stage.getChildByName(
+				PIXIHandler.PIXI_WRAPPERS.BG_ID
+			);
+
+			const currentBgSprite = currentBgContainer?.getChildByName(
+				PIXIHandler.PIXI_DO.BG_ID
+			);
+
+			if (
+				ambientLightingEnabled &&
+				ambientLightingManager &&
+				currentBgSprite
+			) {
+				console.warn('WebGL context restored');
+				ambientLightingManager.resize(
+					PIXIApp,
+					{
+						width: window.innerWidth,
+						height: window.innerHeight,
+					},
+					currentBgSprite
+				);
+			}
+		});
+
 		if (bg) {
 			await PIXIHandler.setBgOnStage(PIXIApp, bg);
 		}
@@ -623,34 +688,11 @@ export class PIXIHandler {
 		);
 
 		const bgSprite = bgContainer.getChildByName(PIXIHandler.PIXI_DO.BG_ID);
-		const light = lightingContainer.addLight(PIXIApp, tile);
+
+		if (lightingContainer) {
+			const light = lightingContainer.addLight(PIXIApp, tile);
+		}
 		// PIXIHandler.addControlButtons(light, tile.tileType);
-
-		let screenWidth = Math.max(
-			document.documentElement.clientWidth,
-			window.innerWidth || 0
-		);
-		let screenHeight = Math.max(
-			document.documentElement.clientHeight,
-			window.innerHeight || 0
-		);
-
-		// if (lightingContainer ) {
-		// 	lightingContainer.resize(
-		// 		PIXIApp,
-		// 		{
-		// 			screenWidth,
-		// 			screenHeight,
-		// 		},
-		// 		bgSprite
-		// 	);
-		// }
-		lightingContainer.updateLightMask(PIXIApp.renderer);
-		PIXIApp.ticker.maxFPS = 30;
-		PIXIApp.ticker.add(() => {
-			lightingContainer.updateLightMask(PIXIApp.renderer);
-		});
-		PIXIApp.ticker.start();
 	}
 
 	static async ToggleWeatherEffectOnStage(
@@ -826,7 +868,11 @@ export class PIXIHandler {
 
 		console.trace('setTileOnStage called');
 		logger('ResizeStage called', screenWidth, screenHeight);
-		PIXIHandler.ResizeRenderer(PIXIApp, screenWidth, screenHeight);
+		await PIXIHandler.ResizeRenderer(
+			PIXIApp,
+			window.innerWidth,
+			window.innerHeight
+		);
 
 		const bgContainer = PIXIApp.stage.getChildByName(
 			PIXIHandler.PIXI_WRAPPERS.BG_ID
@@ -881,8 +927,8 @@ export class PIXIHandler {
 			lightingContainer.resize(
 				PIXIApp,
 				{
-					width: screenWidth,
-					height: screenHeight,
+					width: window.innerWidth,
+					height: window.innerHeight,
 				},
 				bgSprite
 			);
@@ -913,7 +959,7 @@ export class PIXIHandler {
 	}
 
 	static async ResizeRenderer(PIXIApp, screenWidth, screenHeight) {
-		PIXIApp.renderer.resize(screenWidth, screenHeight);
+		await PIXIApp.renderer.resize(screenWidth, screenHeight);
 	}
 
 	static async ResizeStageBg(
@@ -1333,15 +1379,7 @@ export class PIXIHandler {
 			.on('pointerup', () => {
 				sprite.dragging = false;
 				sprite.dragOffset = null;
-				if (tile.tileType === Tile.TileType.LIGHT) {
-					const stage = StageManager.shared()?.PIXIApp?.stage;
-					const lightingContainer = stage.getChildByName(
-						PIXIHandler.PIXI_WRAPPERS.LIGHT_ID
-					);
-					lightingContainer.updateLightMask(
-						StageManager.shared()?.PIXIApp.renderer
-					);
-				}
+
 				PIXIHandler.updateControlButtonsPosition(sprite, tile);
 				PIXIHandler.sendSpriteChangesToSocket(tile);
 			})

@@ -1,3 +1,5 @@
+import { Light } from './light.js';
+import { defaultIlluminationShader } from './shaders.js';
 import { Tile } from './tile.js';
 import { logger } from './utilities.js';
 
@@ -41,37 +43,25 @@ export class Stage {
 			alpha: 1,
 		},
 		LIGHT: {
-			CIRCLE: {
-				shape: 'circle',
+			DEFAULT: {
 				blendMode: PIXI.BLEND_MODES.ADD,
 				radius: 256,
-				color: 0xffffff,
-				animated: 'pulse',
+				color: '#000000',
+				colorIntensity: 0.4,
+				type: Light.TYPE.none,
 				baseScale: 1,
 				screenWidth: 1920,
 				screenHeight: 1080,
-				pX: 960,
-				pY: 540,
+				bgWidth: 1920,
+				bgHeight: 1080,
+				bgPosX: 0,
+				bgPosY: 0,
+				enableColor: true,
+				pX: 0.5,
+				pY: 0.5,
 				anchor: { x: 0, y: 0 },
-				visible: false,
-				alpha: 0.3,
-			},
-			CONE: {
-				shape: 'cone',
-				blendMode: PIXI.BLEND_MODES.ADD,
-				radius: 256,
-				angle: 90,
-				rotation: 0,
-				color: 0xffffff,
-				animated: 'pulse',
-				baseScale: 1,
-				screenWidth: 1920,
-				screenHeight: 1080,
-				pX: 0,
-				pY: 0,
-				anchor: { x: 0, y: 0 },
-				visible: false,
-				alpha: 0.3,
+				visible: true,
+				alpha: 1,
 			},
 		},
 	};
@@ -143,10 +133,14 @@ export class Stage {
 
 	addLight(light) {
 		if (light) {
-			light.pixiOptions = structuredClone(Stage.PIXI_TILE_PRESETS.LIGHT.CONE);
+			if (!light.pixiOptions) {
+				light.pixiOptions = structuredClone(
+					Stage.PIXI_TILE_PRESETS.LIGHT.DEFAULT
+				);
+			}
 			if (!light.pixiOptionsRuntime) {
 				light.pixiOptionsRuntime = structuredClone(
-					Stage.PIXI_TILE_PRESETS.LIGHT.CONE
+					Stage.PIXI_TILE_PRESETS.LIGHT.DEFAULT
 				);
 			}
 		}
@@ -158,12 +152,14 @@ export class Stage {
 		this.lights = lights;
 		if (this.lights) {
 			this.lights.forEach((light) => {
-				light.pixiOptions = structuredClone(
-					Stage.PIXI_TILE_PRESETS.LIGHT.CONE
-				);
+				if (!light.pixiOptions) {
+					light.pixiOptions = structuredClone(
+						Stage.PIXI_TILE_PRESETS.LIGHT.DEFAULT
+					);
+				}
 				if (!light.pixiOptionsRuntime) {
 					light.pixiOptionsRuntime = structuredClone(
-						Stage.PIXI_TILE_PRESETS.LIGHT.CONE
+						Stage.PIXI_TILE_PRESETS.LIGHT.DEFAULT
 					);
 				}
 			});

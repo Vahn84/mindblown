@@ -50,6 +50,7 @@
 	"scripts": ["lib/custom-pixi-particles.umd.js"],
 
 	"esmodules": [
+		"scripts/shaders.js",
 		"scripts/event-emitter.js",
 		"scripts/pixi-handler.js",
 		"scripts/config.js",
@@ -57,6 +58,8 @@
 		"scripts/mindblown.js",
 		"scripts/setup.js",
 		"scripts/stage.js",
+		"scripts/light-source.js",
+		"scripts/ambient-lighting-manager.js",
 		"scripts/stage-manager.js",
 		"scripts/tile.js",
 		"scripts/utilities.js",

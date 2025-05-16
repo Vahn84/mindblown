@@ -4,6 +4,15 @@
             <div id="npcsWrapper" class="mindblown-accordion-wrapper {{#unless dockExpanded}}reduced{{/unless}}">
                 {{> npcs}}
             </div>
+            <div class="weatherToolbar {{#unless dockExpanded}}reduced{{/unless}}">
+                <div class="weather-button rain {{#unless hasStage}}hidden{{/unless}} {{#ifEquals activeWeather "rain"}}active{{/ifEquals}}" data-effect="{{weather.rain}}" title="Rain"><i class="fa-solid fa-cloud-showers-heavy"></i></div>
+                <div class="weather-button fog {{#unless hasStage}}hidden{{/unless}} {{#ifEquals activeWeather "fog"}}active{{/ifEquals}}" data-effect="{{weather.fog}}" title="Fog"><i class="fa-solid fa-smog"></i></div>
+                <div class="weather-button snow {{#unless hasStage}}hidden{{/unless}} {{#ifEquals activeWeather "snow"}}active{{/ifEquals}}" data-effect="{{weather.snow}}" title="Snow"><i class="fa-solid fa-snowflake"></i></div>
+                <div class="weather-button sandstorm {{#unless hasStage}}hidden{{/unless}} {{#ifEquals activeWeather "sandstorm"}}active{{/ifEquals}}" data-effect="{{weather.sandstorm}}" title="Sandstorm"><i class="fa-solid fa-hurricane"></i></div>
+                <div class="weather-button thunder  {{#unless hasStage}}hidden{{/unless}}" data-effect="{{weather.thunder}}" title="Thunder"><i class="fa-solid fa-bolt"></i></div>
+                <div class="weather-button lights" data-effect="lights" title="Lights"><i class="fa-solid fa-lightbulb"></i></div>
+                <div class="weather-button vfx" data-effect="vfx" title="VFX"><i class="fa-solid fa-film"></i></div>
+            </div>
             <div id="focusWrapper" class="mindblown-accordion-wrapper {{#unless dockExpanded}}reduced{{/unless}}">
                 {{> focus}}
             </div>

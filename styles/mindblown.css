@@ -90,7 +90,12 @@ canvas#mbCanvas.hidden {
 }
 .mindblown-ui #bgsWrapper.mindblown-accordion-wrapper {
 	background: #b7b7b71b;
-	backdrop-filter: blur(5px);
+	/* backdrop-filter: blur(5px); */
+}
+
+.mindblown-ui .columnWrapper {
+	display: flex;
+	justify-content: space-around;
 }
 
 .mindblown-ui #bgsWrapper #filterFavourites {
@@ -124,28 +129,38 @@ canvas#mbCanvas.hidden {
 }
 
 .mindblown-ui #npcsWrapper.mindblown-accordion-wrapper,
-.mindblown-ui #focusWrapper.mindblown-accordion-wrapper {
+.mindblown-ui #focusWrapper.mindblown-accordion-wrapper,
+.mindblown-ui #vfxWrapper.mindblown-accordion-wrapper,
+.mindblown-ui #lightWrapper.mindblown-accordion-wrapper {
 	background: #b7b7b71b;
-	backdrop-filter: blur(5px);
 	width: 210px;
-
 	position: absolute;
 	bottom: 149px;
 }
 
 .mindblown-ui #npcsWrapper.mindblown-accordion-wrapper.reduced,
-.mindblown-ui #focusWrapper.mindblown-accordion-wrapper.reduced {
+.mindblown-ui #npcsWrapper.mindblown-accordion-wrapper.reduced,
+.mindblown-ui #vfxWrapper.mindblown-accordion-wrapper.reduced,
+.mindblown-ui #lightWrapper.mindblown-accordion-wrapper.reduced {
 	bottom: 29px;
 }
 
 .mindblown-ui #focusWrapper.mindblown-accordion-wrapper {
 	/* display: none; */
-	right: 150px;
+	right: 100px;
+}
+.mindblown-ui #vfxWrapper.mindblown-accordion-wrapper {
+	/* display: none; */
+	right: 320px;
 }
 
 .mindblown-ui #npcsWrapper.mindblown-accordion-wrapper {
 	/* display: none; */
 	left: 100px;
+}
+.mindblown-ui #lightWrapper.mindblown-accordion-wrapper {
+	/* display: none; */
+	left: 320px;
 }
 
 .mindblown-ui .horizontal-accordion-one {
@@ -175,34 +190,22 @@ canvas#mbCanvas.hidden {
 	align-items: center;
 }
 
-.mindblown-ui .horizontal-accordion-one .mindblown-list-header .weatherToolbar {
+.mindblown-ui .weatherToolbar {
 	display: flex;
 	gap: 8px;
 	align-items: center;
-	left: 40vw;
-	bottom: 130px;
 	position: absolute;
+	z-index: 1;
 }
 
-.mindblown-ui
-	.horizontal-accordion-one
-	.mindblown-list-header
-	.weatherToolbar.reduced {
+.mindblown-ui .weatherToolbar.reduced {
 	bottom: 10px;
 }
-.mindblown-ui
-	.horizontal-accordion-one
-	.mindblown-list-header
-	.weatherToolbar
-	.weather-button.hidden {
+.mindblown-ui .weatherToolbar .weather-button.hidden {
 	display: none;
 }
 
-.mindblown-ui
-	.horizontal-accordion-one
-	.mindblown-list-header
-	.weatherToolbar
-	.weather-button {
+.mindblown-ui .weatherToolbar .weather-button {
 	width: 55px;
 	height: 55px;
 	border-radius: 8px;
@@ -218,74 +221,38 @@ canvas#mbCanvas.hidden {
 	position: relative;
 }
 
-.mindblown-ui
-	.horizontal-accordion-one
-	.mindblown-list-header
-	.weatherToolbar
-	.weather-button:hover {
+.mindblown-ui .weatherToolbar .weather-button:hover {
 	transform: scale(1.1);
 	box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
 }
 
-.mindblown-ui
-	.horizontal-accordion-one
-	.mindblown-list-header
-	.weatherToolbar
-	.weather-button.rain {
+.mindblown-ui .weatherToolbar .weather-button.rain {
 	background-color: #007bff;
 }
 
-.mindblown-ui
-	.horizontal-accordion-one
-	.mindblown-list-header
-	.weatherToolbar
-	.weather-button.fog {
+.mindblown-ui .weatherToolbar .weather-button.fog {
 	background-color: #6c757d;
 }
 
-.mindblown-ui
-	.horizontal-accordion-one
-	.mindblown-list-header
-	.weatherToolbar
-	.weather-button.snow {
+.mindblown-ui .weatherToolbar .weather-button.snow {
 	background-color: #17a2b8;
 }
 
-.mindblown-ui
-	.horizontal-accordion-one
-	.mindblown-list-header
-	.weatherToolbar
-	.weather-button.sandstorm {
+.mindblown-ui .weatherToolbar .weather-button.sandstorm {
 	background-color: #c9a84c;
 }
 
-.mindblown-ui
-	.horizontal-accordion-one
-	.mindblown-list-header
-	.weatherToolbar
-	.weather-button.thunder {
+.mindblown-ui .weatherToolbar .weather-button.thunder {
 	background-color: #4d07ff;
 }
-.mindblown-ui
-	.horizontal-accordion-one
-	.mindblown-list-header
-	.weatherToolbar
-	.weather-button.vfx {
+.mindblown-ui .weatherToolbar .weather-button.vfx {
 	background-color: #1e1d1d;
 }
-.mindblown-ui
-	.horizontal-accordion-one
-	.mindblown-list-header
-	.weatherToolbar
-	.weather-button.lights {
+.mindblown-ui .weatherToolbar .weather-button.lights {
 	background-color: #ffc107;
 }
 
-.mindblown-ui
-	.horizontal-accordion-one
-	.mindblown-list-header
-	.weatherToolbar
-	.weather-button.active {
+.mindblown-ui .weatherToolbar .weather-button.active {
 	transform: scale(1.1);
 	box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
 	background-color: #9c2541;
@@ -334,7 +301,7 @@ canvas#mbCanvas.hidden {
 	flex-direction: row;
 	height: 100%;
 	align-items: center;
-	width: 150px;
+	width: 100px;
 	transition: all ease-in 1s;
 }
 
@@ -354,14 +321,14 @@ canvas#mbCanvas.hidden {
 	justify-content: center;
 	flex-direction: column;
 	height: 100%;
-	width: 150px;
-	min-width: 150px;
+	width: 100px;
+	min-width: 100px;
 	align-items: center;
-	transition: all ease-in 0.4s;
 	/* background-blend-mode: luminosity; */
 	cursor: pointer;
 	background: black;
 	position: relative;
+	border-left: 4px solid #000000;
 }
 .mindblown-ui
 	.horizontal-accordion-one
@@ -371,6 +338,14 @@ canvas#mbCanvas.hidden {
 	background-blend-mode: normal;
 }
 
+.mindblown-ui
+	.horizontal-accordion-one
+	.accordion-container
+	.accordion-item.active
+	.accordion-head
+	.mindblown-list-title {
+		    background: #124d0c9c;
+	}
 .mindblown-ui
 	.horizontal-accordion-one
 	.accordion-container
@@ -384,7 +359,8 @@ canvas#mbCanvas.hidden {
 	align-items: center;
 	height: 100%;
 	/* backdrop-filter: blur(2px); */
-	background: rgba(0, 0, 0, 0.4);
+	background: rgba(0, 0, 0, 0.7);
+	text-shadow: 2px 2px 4px #000000;
 }
 
 .mindblown-ui
@@ -395,7 +371,7 @@ canvas#mbCanvas.hidden {
 	span {
 	color: #ffffff;
 	font-family: Arial, Helvetica, sans-serif;
-	font-size: 15px;
+	font-size: 13px;
 	/* transform: rotate(-90deg); */
 	display: flex;
 	width: fit-content;
@@ -478,8 +454,6 @@ canvas#mbCanvas.hidden {
 	.accordion-head {
 	width: 150px;
 	min-width: 150px;
-	background: #333 !important;
-
 }
 
 .media-tooltip {
@@ -549,7 +523,7 @@ canvas#mbCanvas.hidden {
 	.accordion-item.active
 	.accordion-head
 	span {
-	transform: rotate(0deg);
+	font-size:18px;
 }
 .mindblown-ui
 	.horizontal-accordion-one
@@ -680,7 +654,6 @@ canvas#mbCanvas.hidden {
 	padding: 10px;
 	cursor: pointer;
 	border-radius: 8px;
-
 }
 
 .mindblown-accordion-body {

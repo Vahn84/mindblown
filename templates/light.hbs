@@ -1,0 +1,16 @@
+<div class='mindblown-panel-container closed'>
+	<div class='mindblown-panel-toggle'>
+		<i class='fa-regular fa-lightbulb'></i>
+	</div>
+
+	<div class='mindblown-panel-content'>
+		<ul class='mindblown-list'>
+			{{#each lights as |light index|}}
+				<li class='mindblown-list-item'>
+					<span><i class='fa-solid fa-{{light.icon}}'></i>
+						{{light.name}}</span>
+				</li>
+			{{/each}}
+		</ul>
+	</div>
+</div>

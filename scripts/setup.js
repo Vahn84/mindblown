@@ -13,6 +13,8 @@ export async function setupModule() {
 		CONFIG.TEMPLATES.NPCS,
 		CONFIG.TEMPLATES.BGS,
 		CONFIG.TEMPLATES.FOCUS,
+		CONFIG.TEMPLATES.VFX,
+		CONFIG.TEMPLATES.LIGH,
 	];
 
 	try {
@@ -186,6 +188,13 @@ export function initSettings() {
 	game.settings.register(CONFIG.MOD_NAME, CONFIG.HIDDEN_STAGE_FOR_PLAYERS, {
 		name: 'hideStageForPlayers',
 		hint: 'Toggle Stage visibility for Players',
+		scope: 'world',
+		config: true,
+		type: Boolean,
+	});
+	game.settings.register(CONFIG.MOD_NAME, CONFIG.AMBIENT_LIGHTING_ENABLED, {
+		name: 'ambientLightingEnabled',
+		hint: 'Toggle Ambient Lighting',
 		scope: 'world',
 		config: true,
 		type: Boolean,

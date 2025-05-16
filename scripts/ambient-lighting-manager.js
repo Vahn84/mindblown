@@ -1,26 +1,27 @@
-import { createLightSourceSprite } from './light-source-sprite.js';
-import { logger } from './utilities.js';
+import { LightSource } from './light-source.js';
+import { hexToRgb, IS_GM, logger } from './utilities.js';
 import { PIXIHandler } from './pixi-handler.js';
 import { StageManager } from './stage-manager.js';
+import { Stage } from './stage.js';
+import { Light } from './light.js';
 
 export class AmbientLightingManager extends PIXI.Container {
-	constructor({ width, height, darkness = 1.0 }) {
+	constructor({ PIXIApp, width, height, darkness = 1.0 }) {
 		super();
 
 		this.width = width;
 		this.height = height;
 		this.lights = [];
+		this._needsLightMaskUpdate = true;
 
 		this._ticker = new PIXI.Ticker();
-		this._ticker.add(this._animateLights, this);
-		this._ticker.start();
+		this._ticker.maxFPS = 30;
+		this._lastUpdate = 0;
 
 		this.lightContainer = new PIXI.Container();
 		this.lightContainer.blendMode = PIXI.BLEND_MODES.ADD;
 
 		this.lightMask = PIXI.RenderTexture.create({ width, height });
-		// this.lightMaskSprite = new PIXI.Sprite(this.lightMask);
-		// this.lightMaskSprite.visible = true; // for debugging
 
 		const darknessTexture = PIXI.Texture.WHITE;
 		this._darkness = new PIXI.Sprite(darknessTexture);
@@ -31,95 +32,141 @@ export class AmbientLightingManager extends PIXI.Container {
 		this._darkness.eventMode = 'none'; // for PIXI v7+ (if you're using it)
 
 		const fragment = `
-  precision mediump float;
-  varying vec2 vTextureCoord;
-  uniform sampler2D uLightMask;
-  uniform float uDarkness;
-  uniform vec2 uResolution;
+precision mediump float;
 
-  void main(void) {
-    vec2 uv = vec2(gl_FragCoord.x, uResolution.y - gl_FragCoord.y) / uResolution;
-    float light = texture2D(uLightMask, uv).r;
-    float feather = 0.8; // Increase to make edges softer
-    float lightFeathered = smoothstep(0.0, feather, light);
-    float shadow = 1.0 - lightFeathered;
-    float alpha = shadow * uDarkness;
-    gl_FragColor = vec4(0.0, 0.0, 0.0, alpha);
-  }
-  `;
+varying vec2 vTextureCoord;
+uniform sampler2D uLightMask;
+uniform float uDarkness;
+
+void main(void) {
+  vec2 uv = vTextureCoord;
+  float light = texture2D(uLightMask, uv).a;
+
+  float alpha = uDarkness * (1.0 - light);
+  gl_FragColor = vec4(0.0, 0.0, 0.0, alpha);
+}
+`;
 
 		this._darknessFilter = new PIXI.Filter(undefined, fragment, {
 			uLightMask: this.lightMask,
 			uDarkness: darkness,
-			uResolution: [width, height],
 		});
 
+		this._darknessFilter.autoFit = true;
+		this._darkness.filterArea = new PIXI.Rectangle(0, 0, width, height);
 		this._darkness.filters = [this._darknessFilter];
+
 		this._darkness.blendMode = PIXI.BLEND_MODES.NORMAL;
 
-		// this.addChild(this.lightMaskSprite);
 		this.addChild(this._darkness);
 		this.addChild(this.lightContainer);
+		// Debug: print children draw order after construction
+		console.log('Children draw order after construction:');
+		this.children.forEach((c) => console.log(c.name || c.constructor.name));
+
+		this._ticker.add((delta) => {
+			// const now = performance.now();
+			// if (now - this._lastUpdate > 300) {
+			// 	this._animateLights();
+			// 	this._lastUpdate = now;
+			// }
+			this.updateLightMask(PIXIApp.renderer);
+		});
+		this._ticker.start();
 	}
-
-	_animateLights() {
-		const time = performance.now() * 0.002;
-
-		for (const light of this.lights) {
-			const isResizing = light.pixiOptionsRuntime?.isResizing;
-			if (isResizing) continue; // Skip animation if resizing
-			const mode = light.pixiOptions.animated;
-			const baseScale = light.pixiOptionsRuntime?.scale ?? 1;
-			const baseScaleX = light.pixiOptionsRuntime.finalScaleX ?? 1;
-			const baseScaleY = light.pixiOptionsRuntime.finalScaleY ?? 1;
-			let eased = 1;
-
-			// Ensure stable seed and eased value for each light
-			if (!light.seed) light.seed = Math.random() * 1000;
-			if (light._eased === undefined) light._eased = 1;
-
-			switch (mode) {
-				case 'torch':
-					// Random noisy flicker
-					eased = 0.85 + 0.15 * Math.random();
-					break;
-
-				case 'pulse':
-					const pulse = 0.5 + 0.5 * Math.cos(time + light.seed);
-					const target = 0.8 + 0.2 * pulse;
-					light._eased += (target - light._eased) * 0.1; // Smoothing
-					eased = light._eased;
-					break;
-
-				case 'candle':
-					// Slower noise-based flicker
-					eased = 0.9 + 0.1 * Math.sin(time * 2 + light.x);
-					break;
-
-				case 'none':
-				default:
-					eased = 1;
-					break;
-			}
-
-			light.alpha = eased;
-			light.scale.set(baseScaleX * eased, baseScaleY * eased);
-		}
-	}
-
 	/**
 	 * Add a new light source.
 	 * @param {Object} options - See LightSourceSprite for config
 	 */
 	addLight(PIXIApp, tile) {
-		let light = createLightSourceSprite(PIXIApp, tile.pixiOptions);
-		light.name = tile.id;
-		light.pixiOptions = tile.pixiOptions;
-		light.pixiOptionsRuntime = tile.pixiOptionsRuntime;
-		this.lightContainer.addChild(light);
-		this.lights.push(light);
-		this.addDragAndDrop(PIXIApp, light);
-		return light;
+		const lightMeshContainer = LightSource.create(
+			PIXIApp,
+			tile.pixiOptions,
+			() => {
+				this._needsLightMaskUpdate = true;
+				this.updateLightMask(PIXIApp.renderer);
+			}
+		)
+			.setName(tile.id)
+			.setPixiOptionsRuntime(tile.pixiOptionsRuntime);
+
+		const openConfig = () => {
+			this.openLightConfigDialog(lightMeshContainer);
+		};
+
+		lightMeshContainer.onDoubleClick = openConfig;
+		this.lightContainer.addChild(lightMeshContainer);
+		this.addDragAndDrop(PIXIApp, lightMeshContainer);
+
+		const bgContainer = PIXIApp.stage.getChildByName(
+			PIXIHandler.PIXI_WRAPPERS.BG_ID
+		);
+		const bgSprite = bgContainer.getChildByName(PIXIHandler.PIXI_DO.BG_ID);
+		this.setLightScaleAndPosition(
+			tile.pixiOptionsRuntime,
+			lightMeshContainer,
+			bgSprite,
+			false
+		);
+
+		return lightMeshContainer;
+	}
+
+	setLightScaleAndPosition(
+		pixiOptionsRuntime,
+		lightMeshContainer,
+		bgSprite,
+		adjustForDelta = false
+	) {
+		const relativeX = pixiOptionsRuntime.pX;
+		const relativeY = pixiOptionsRuntime.pY;
+
+		const oldBgPosX = pixiOptionsRuntime.bgPosX || 0;
+		const oldBgPosY = pixiOptionsRuntime.bgPosY || 0;
+		const oldBgWidth = pixiOptionsRuntime.bgWidth || bgSprite.width;
+		const oldBgHeight = pixiOptionsRuntime.bgHeight || bgSprite.height;
+
+		// Adjust based on difference between current and old bg positioning
+		const deltaX = adjustForDelta ? bgSprite.position.x - oldBgPosX : 0;
+		const deltaY = adjustForDelta ? bgSprite.position.y - oldBgPosY : 0;
+
+		const anchorX = bgSprite.anchor?.x ?? 0.5;
+		const anchorY = bgSprite.anchor?.y ?? 0.5;
+
+		const newX = bgSprite.position.x + relativeX * bgSprite.width;
+		const newY = bgSprite.position.y + relativeY * bgSprite.height;
+
+		lightMeshContainer.x = adjustForDelta ? newX + deltaX : newX;
+		lightMeshContainer.y = adjustForDelta ? newY + deltaY : newY;
+
+		lightMeshContainer.pixiOptionsRuntime.pX = relativeX;
+		lightMeshContainer.pixiOptionsRuntime.pY = relativeY;
+		lightMeshContainer.pixiOptionsRuntime.bgWidth = bgSprite.width;
+		lightMeshContainer.pixiOptionsRuntime.bgHeight = bgSprite.height;
+		if (adjustForDelta) {
+			lightMeshContainer.pixiOptionsRuntime.bgPosX = bgSprite.position.x;
+			lightMeshContainer.pixiOptionsRuntime.bgPosY = bgSprite.position.y;
+		}
+
+		const scaleX = bgSprite.width / oldBgWidth;
+		const scaleY = bgSprite.height / oldBgHeight;
+		const finalScale = Math.min(scaleX, scaleY); // or max() if more appropriate
+		const baseScale = pixiOptionsRuntime.baseScale || 1;
+		lightMeshContainer.scale.set(baseScale * finalScale);
+
+		let log = '';
+		Object.keys(pixiOptionsRuntime).forEach((key) => {
+			if (pixiOptionsRuntime[key] !== undefined) {
+				const value =
+					typeof pixiOptionsRuntime[key] === 'object'
+						? JSON.stringify(pixiOptionsRuntime[key])
+						: pixiOptionsRuntime[key];
+				log += `${key}: ${value}, `;
+				log += '\n';
+			}
+		});
+
+		logger('setLightScaleAndPosition', log);
 	}
 
 	/**
@@ -133,9 +180,26 @@ export class AmbientLightingManager extends PIXI.Container {
 	}
 
 	clearLights() {
-		this.lights.forEach((l) => l.destroy());
+		for (const lightMeshContainer of this.lightContainer.children) {
+			lightMeshContainer.cleanup();
+		}
 		this.lightContainer.removeChildren();
-		this.lights = [];
+	}
+
+	stopUpdatingLightingMask() {
+		this._ticker.stop();
+		this._needsLightMaskUpdate = false;
+	}
+
+	clearDarkness() {
+		this._darkness.destroy();
+		this._darknessFilter.destroy();
+	}
+
+	remove() {
+		this.clearLights();
+		this.stopUpdatingLightingMask();
+		this.clearDarkness();
 	}
 
 	resize(PIXIApp, { width, height }, bgSprite) {
@@ -145,15 +209,16 @@ export class AmbientLightingManager extends PIXI.Container {
 		// Resize and reposition the darkness sprite
 		this._darkness.width = width;
 		this._darkness.height = height;
+		this._darknessFilter.autoFit = true;
+		this._darkness.filterArea = new PIXI.Rectangle(0, 0, width, height);
 		this._darkness.position.set(0, 0);
 		// this._darkness.scale.set(width, height);
 		// Recreate the light mask render texture
 		this.lightMask.destroy(true);
-		logger(`Resizing light mask to ${width}, ${height}`);
+		// logger(`Resizing light mask to ${width}, ${height}`);
 		this.lightMask = PIXI.RenderTexture.create({ width, height });
 
-		// Update the filter uniforms with new resolution and light mask
-		this._darknessFilter.uniforms.uResolution = [width, height];
+		// Update the filter uniforms with new light mask
 		this._darknessFilter.uniforms.uLightMask = this.lightMask;
 		this._darkness.filters = [];
 		this._darkness.filters = [this._darknessFilter];
@@ -169,44 +234,22 @@ export class AmbientLightingManager extends PIXI.Container {
 	}
 
 	async resizeLights(PIXIApp, width, height, bgSprite) {
-		for (const light of this.lights) {
-			const options = light.pixiOptionsRuntime || light.pixiOptions || {};
-			const {
-				pX = 0,
-				pY = 0,
-				screenWidth = 1920,
-				screenHeight = 1080,
-				originalScaleX = 1,
-				originalScaleY = 1,
-				baseScale = 1,
-			} = options;
-
-			const pixiOptions = light.pixiOptions || {};
-
-			// Use bgSprite for position and scale reference
-			const scaleX = bgSprite.width / screenWidth;
-			const scaleY = bgSprite.height / screenHeight;
-
-			const newX = bgSprite.position.x + pX * scaleX;
-			const newY = bgSprite.position.y + pY * scaleY;
-
-			light.x = newX;
-			light.y = newY;
-
-			const scale = Math.min(scaleX, scaleY);
-			logger(
-				`scale: ${scale}, screenWith: ${screenWidth}, screenHeight: ${screenHeight}, width: ${width}, height: ${height}`
+		for (const lightMeshContainer of this.lightContainer.children) {
+			this.setLightScaleAndPosition(
+				lightMeshContainer.pixiOptionsRuntime,
+				lightMeshContainer,
+				bgSprite,
+				false
 			);
-			const finalScaleX = baseScale * scale;
-			const finalScaleY = baseScale * scale;
-
-			light.scale.set(finalScaleX, finalScaleY);
-
-			light.pixiOptionsRuntime.finalScaleX = finalScaleX;
-			light.pixiOptionsRuntime.finalScaleY = finalScaleY;
-
-			logger(light);
 		}
+		const scaleFactor = 1;
+		this.lightMask.destroy(true);
+		this.lightMask = PIXI.RenderTexture.create({
+			width: Math.floor(width * scaleFactor),
+			height: Math.floor(height * scaleFactor),
+		});
+		this._darknessFilter.uniforms.uLightMask = this.lightMask;
+
 		this.updateLightMask(PIXIApp.renderer);
 	}
 	/**
@@ -215,38 +258,57 @@ export class AmbientLightingManager extends PIXI.Container {
 	 * @param {PIXI.Renderer} renderer
 	 */
 	updateLightMask(renderer) {
-		this.lightContainer.position.set(0, 0);
-		this.lightContainer.pivot.set(0, 0);
-		this.lightContainer.scale.set(1);
+		// if (!this._needsLightMaskUpdate) return;
+		// this.lightContainer.position.set(0, 0);
+		this.lightContainer.pivot.set(0.5, 0.5);
+		// this.lightContainer.scale.set(1); // match scaleFactor above
 		// // Defensive: ensure all lights use screen positions
-		this.lights.forEach((light) => {
-			light.position.set(light.x, light.y); // enforce screen alignment
-		});
-		// // Render the light container into the mask texture
 
 		renderer.render(this.lightContainer, {
 			renderTexture: this.lightMask,
 			clear: true,
+			skipUpdateTransform: false,
 		});
+		this._needsLightMaskUpdate = false;
+		// this._darknessFilter.uniforms.uLightMask = this.lightMask;
 	}
 
-	async addDragAndDrop(PIXIApp, sprite) {
-		sprite.interactive = true;
-		sprite.buttonMode = true;
-		sprite
+	updateLightCenter() {
+		// No longer needed: uCenter uniform is now baked into shaders.
+	}
+
+	async addDragAndDrop(PIXIApp, lightMeshContainer) {
+		if (!IS_GM()) return;
+		let lastClickTime = 0;
+		lightMeshContainer.interactive = true;
+		lightMeshContainer.buttonMode = true;
+		lightMeshContainer
 			.on('pointerdown', (event) => {
-				// Prevent drag if resizing is active
-				if (sprite.resizing) return;
-				sprite.dragging = true;
-				const pos = event.data.getLocalPosition(sprite.parent);
-				sprite.dragOffset = {
-					x: pos.x - sprite.position.x,
-					y: pos.y - sprite.position.y,
-				};
+				if (lightMeshContainer.resizing) return;
+				const clickTime = performance.now();
+				if (clickTime - lastClickTime < 300) {
+					if (
+						typeof lightMeshContainer.onDoubleClick === 'function'
+					) {
+						lightMeshContainer.onDoubleClick();
+					}
+					lastClickTime = clickTime;
+				} else {
+					lightMeshContainer.dragging = true;
+					const pos = event.data.getLocalPosition(
+						lightMeshContainer.parent
+					);
+					lightMeshContainer.dragOffset = {
+						x: pos.x - lightMeshContainer.position.x,
+						y: pos.y - lightMeshContainer.position.y,
+					};
+					lastClickTime = clickTime;
+				}
 			})
 			.on('pointerup', async () => {
-				sprite.dragging = false;
-				sprite.dragOffset = null;
+				lightMeshContainer.dragging = false;
+				lightMeshContainer.dragOffset = null;
+
 				const bgContainer =
 					StageManager.shared().PIXIApp.stage.getChildByName(
 						PIXIHandler.PIXI_WRAPPERS.BG_ID
@@ -254,37 +316,271 @@ export class AmbientLightingManager extends PIXI.Container {
 				const bgSprite = bgContainer.getChildByName(
 					PIXIHandler.PIXI_DO.BG_ID
 				);
-				if (!bgSprite) {
-					return;
-				}
-				const scaleX = bgSprite.width / sprite.pixiOptions.screenWidth;
-				const scaleY =
-					bgSprite.height / sprite.pixiOptions.screenHeight;
+				lightMeshContainer.pixiOptionsRuntime.pX =
+					(lightMeshContainer.position.x - bgSprite.position.x) /
+					bgSprite.width;
+				lightMeshContainer.pixiOptionsRuntime.pY =
+					(lightMeshContainer.position.y - bgSprite.position.y) /
+					bgSprite.height;
 
-				sprite.pixiOptionsRuntime.pX =
-					(sprite.x - bgSprite.position.x) / scaleX;
-				sprite.pixiOptionsRuntime.pY =
-					(sprite.y - bgSprite.position.y) / scaleY;
+				lightMeshContainer.pixiOptionsRuntime.bgWidth = bgSprite.width;
+				lightMeshContainer.pixiOptionsRuntime.bgHeight =
+					bgSprite.height;
+				lightMeshContainer.pixiOptionsRuntime.bgPosX =
+					bgSprite.position.x;
+				lightMeshContainer.pixiOptionsRuntime.bgPosY =
+					bgSprite.position.y;
 
+				let log = '';
+				Object.keys(lightMeshContainer.pixiOptionsRuntime).forEach(
+					(key) => {
+						if (
+							lightMeshContainer.pixiOptionsRuntime[key] !==
+							undefined
+						) {
+							const value =
+								typeof lightMeshContainer.pixiOptionsRuntime[
+									key
+								] === 'object'
+									? JSON.stringify(
+											lightMeshContainer
+												.pixiOptionsRuntime[key]
+									  )
+									: lightMeshContainer.pixiOptionsRuntime[
+											key
+									  ];
+							log += `${key}: ${value}, `;
+							log += '\n';
+						}
+					}
+				);
+
+				logger('setLightScaleAndPosition', log);
+
+				this._needsLightMaskUpdate = true;
 				this.updateLightMask(PIXIApp.renderer);
-				const tile = StageManager.shared().getLightById(sprite.name);
+				const tile = await StageManager.shared().getLightById(
+					lightMeshContainer.name
+				);
 				if (tile) {
-					tile.pixiOptionsRuntime = sprite.pixiOptionsRuntime;
-					PIXIHandler.sendSpriteChangesToSocket(tile);
+					tile.pixiOptionsRuntime =
+						lightMeshContainer.pixiOptionsRuntime;
+					tile.pixiOptions = lightMeshContainer.pixiOptions;
+
+					StageManager.shared().updateLight(tile);
 				}
 			})
 			.on('pointerupoutside', () => {
-				sprite.dragging = false;
-				sprite.dragOffset = null;
+				lightMeshContainer.dragging = false;
+				lightMeshContainer.dragOffset = null;
 			})
 			.on('pointermove', (event) => {
-				if (sprite.resizing) return; // Never drag while resizing
-				if (!sprite.dragging) return;
-				const pos = event.data.getLocalPosition(sprite.parent);
-				sprite.position.set(
-					pos.x - sprite.dragOffset.x,
-					pos.y - sprite.dragOffset.y
+				if (lightMeshContainer.resizing) return;
+				if (!lightMeshContainer.dragging) return;
+				const pos = event.data.getLocalPosition(
+					lightMeshContainer.parent
+				);
+				lightMeshContainer.position.set(
+					pos.x - lightMeshContainer.dragOffset.x,
+					pos.y - lightMeshContainer.dragOffset.y
 				);
 			});
+	}
+
+	async openLightConfigDialog(currentLightMeshContainer) {
+		const currentColor =
+			currentLightMeshContainer.pixiOptions.color ||
+			Stage.PIXI_TILE_PRESETS.LIGHT.DEFAULT.color;
+		const currentRadius =
+			currentLightMeshContainer.pixiOptions.radius ||
+			Stage.PIXI_TILE_PRESETS.LIGHT.DEFAULT.radius;
+		const currentType =
+			currentLightMeshContainer.pixiOptions.type || Light.TYPE.none;
+		const colorHex =
+			typeof currentColor !== 'string'
+				? rgbToHex(currentColor)
+				: currentColor;
+		logger('colorHex', colorHex);
+		logger('currentColor', currentColor);
+		const currentAlpha =
+			currentLightMeshContainer.pixiOptions.alpha ||
+			Stage.PIXI_TILE_PRESETS.LIGHT.DEFAULT.alpha;
+		const currentEnableColor =
+			typeof currentLightMeshContainer.pixiOptions.enableColor ===
+			'boolean'
+				? currentLightMeshContainer.pixiOptions.enableColor
+				: true;
+		const currentColorIntensity =
+			currentLightMeshContainer.pixiOptions.colorIntensity ||
+			Stage.PIXI_TILE_PRESETS.LIGHT.DEFAULT.colorIntensity;
+
+		let animOptions = '';
+		Object.values(Light.TYPE).map((type) => {
+			animOptions += `<option value="${type}" ${
+				currentType === type ? 'selected' : ''
+			}>${type}</option>`;
+		});
+		new Dialog({
+			title: 'Light Configuration',
+			content: `
+				<form>
+					<div class="form-group">
+						<label>Radius</label>
+						<input type="number" name="radius" value="${currentRadius}" min="50"/>
+					</div>
+					<div class="form-group">
+						<label>Color</label>
+						<input type="color" name="color" value="${colorHex}" />
+					</div>
+					<div class="form-group">
+						<label>Max Alpha</label>
+						<input type="number" name="maxAlpha" value="${
+							currentAlpha || 1
+						}" min="0" max="1" step="0.01"/>
+					</div>
+					<div class="form-group">
+						<label>Color Intensity</label>
+						<input type="range" name="colorIntensity" min="0" max="1" step="0.1" value="${currentColorIntensity}">
+					</div>
+					<div class="form-group">
+						<label>Animation</label>
+						<select name="animation">
+							${animOptions}
+						</select>
+					</div>
+					<div class="form-group">
+						<label>Light Visibility</label>
+						<input type="checkbox" name="visible" ${
+							currentLightMeshContainer.pixiOptions.visible !==
+							false
+								? 'checked'
+								: ''
+						} />
+					</div>
+					<div class="form-group">
+						<label>Enable Color</label>
+						<input type="checkbox" name="enableColor" ${
+							currentEnableColor ? 'checked' : ''
+						}/>
+					</div>
+				</form>
+			`,
+			buttons: {
+				save: {
+					label: 'Save',
+					callback: async (html) => {
+						const form = html[0].querySelector('form');
+						const radius = parseInt(form.radius.value);
+						const color = form.color.value;
+						const type = form.animation.value;
+						const enableColor = form.enableColor.checked;
+						const colorIntensity = parseFloat(
+							form.colorIntensity.value
+						);
+
+						const previousPixiOptions =
+							currentLightMeshContainer.pixiOptions;
+						const previousPixiOptionsRuntime =
+							currentLightMeshContainer.pixiOptionsRuntime;
+						const visible = form.visible.checked;
+						previousPixiOptions.visible = visible;
+						// update runtime options and recreate light
+						previousPixiOptions.radius = radius;
+						previousPixiOptions.color = color;
+						previousPixiOptions.type = type;
+						previousPixiOptions.alpha = parseFloat(
+							form.maxAlpha.value
+						);
+						previousPixiOptions.enableColor = enableColor;
+						previousPixiOptions.colorIntensity = colorIntensity;
+
+						const lightName = currentLightMeshContainer.name;
+						const x = currentLightMeshContainer.x;
+						const y = currentLightMeshContainer.y;
+
+						this.lightContainer.removeChild(
+							currentLightMeshContainer
+						);
+						currentLightMeshContainer.cleanup();
+
+						const tile = await StageManager.shared().getLightById(
+							lightName
+						);
+						// Compose pixiOptions with enableColor
+						const newPixiOptions = {
+							...previousPixiOptions,
+						};
+						const newLightMeshContainer = LightSource.create(
+							StageManager.shared().PIXIApp,
+							newPixiOptions,
+							(_needsLightMaskUpdate) => {
+								this._needsLightMaskUpdate =
+									_needsLightMaskUpdate;
+								this.updateLightMask(
+									StageManager.shared().PIXIApp.renderer
+								);
+							}
+						).setPixiOptionsRuntime(previousPixiOptionsRuntime);
+
+						newLightMeshContainer.name = lightName;
+						newLightMeshContainer.x = x;
+						newLightMeshContainer.y = y;
+						newLightMeshContainer.onDoubleClick = () =>
+							this.openLightConfigDialog(newLightMeshContainer);
+
+						StageManager.shared().updateLight(tile);
+
+						const index = this.lightContainer.children.findIndex(
+							(lightMeshContainer) =>
+								lightMeshContainer.name ===
+								newLightMeshContainer.name
+						);
+						if (index !== -1) {
+							this.lightContainer.removeChildAt(index);
+						}
+
+						this.lightContainer.addChild(newLightMeshContainer);
+						this.addDragAndDrop(
+							StageManager.shared().PIXIApp,
+							newLightMeshContainer
+						);
+						this._needsLightMaskUpdate = true;
+						this.updateLightMask(
+							StageManager.shared().PIXIApp.renderer
+						);
+					},
+				},
+				delete: {
+					label: 'Delete',
+					callback: async () => {
+						const index = this.lightContainer.children.findIndex(
+							(lightMeshContainer) =>
+								lightMeshContainer.name ===
+								currentLightMeshContainer.name
+						);
+						if (index !== -1) {
+							const lightMeshContainer =
+								this.lightContainer.getChildAt(index);
+							if (lightMeshContainer) {
+								lightMeshContainer.cleanup();
+							}
+							this.lightContainer.removeChildAt(index);
+						}
+						this._needsLightMaskUpdate = true;
+						this.updateLightMask(
+							StageManager.shared().PIXIApp.renderer
+						);
+						const tile = await StageManager.shared().getLightById(
+							currentLightMeshContainer.name
+						);
+						StageManager.shared().removeLight(tile);
+					},
+				},
+				cancel: {
+					label: 'Cancel',
+				},
+			},
+			default: 'save',
+		}).render(true);
 	}
 }

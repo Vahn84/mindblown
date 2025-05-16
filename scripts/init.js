@@ -42,6 +42,19 @@ Hooks.on('ready', () => {
 			MindblownUI.renderSingleton();
 		});
 	}
+
+	const ws = new WebSocketServer({ port: 2323 });
+	ws.on('connection', (socket) => {
+		socket.on('message', (msg) => {
+			try {
+				const data = JSON.parse(msg);
+				logger('data', data);
+				// handleStreamDeckCommand(data);
+			} catch (e) {
+				console.error('Invalid Stream Deck message:', e);
+			}
+		});
+	});
 });
 
 Hooks.on('sequencerReady', () => {
@@ -57,12 +70,12 @@ Hooks.once('init', async () => {
 	await setupModule();
 });
 
-Hooks.on("updateScene", (scene, changes) => {
+Hooks.on('updateScene', (scene, changes) => {
 	if (changes?.environment?.darknessLevel !== undefined) {
-	  console.log("Darkness changed to", changes?.environment?.darknessLevel);
-	  StageManager.shared().setDarkness(changes?.environment?.darknessLevel)
+		console.log('Darkness changed to', changes?.environment?.darknessLevel);
+		StageManager.shared().setDarkness(changes?.environment?.darknessLevel);
 	}
-  });
+});
 
 Hooks.on('getSceneControlButtons', (controls) => {
 	// Check if a group already exists or create your own
@@ -85,10 +98,32 @@ Hooks.on('getSceneControlButtons', (controls) => {
 				button: true,
 			},
 			{
+				name: 'ambient-lighting',
+				title: 'Toggle Ambient Lighting',
+				icon: 'fas fa-lightbulb',
+				onClick: () => {
+					StageManager.shared().toggleAmbientLighting();
+				},
+				toggle: true,
+				active: game.settings.get(
+					CONFIG.MOD_NAME,
+					CONFIG.AMBIENT_LIGHTING_ENABLED
+				),
+			},
+			{
 				name: 'hide-gm-stage',
 				title: 'Hide Stage for GM',
 				icon: 'fas fa-square-minus',
-				onClick: () => {
+				onClick: async () => {
+					let toHide = !game.settings.get(
+						CONFIG.MOD_NAME,
+						CONFIG.HIDDEN_STAGE_FOR_GM
+					);
+					await game.settings.set(
+						CONFIG.MOD_NAME,
+						CONFIG.HIDDEN_STAGE_FOR_GM,
+						toHide
+					);
 					StageManager.shared().toggleStageVisibility(true);
 				},
 				toggle: true,
@@ -102,8 +137,15 @@ Hooks.on('getSceneControlButtons', (controls) => {
 				title: 'Hide Stage for Players',
 				icon: 'fas fa-eye-slash',
 				onClick: () => {
-					let toHide = !game.settings.get(CONFIG.MOD_NAME, CONFIG.HIDDEN_STAGE_FOR_PLAYERS)
-					game.settings.set(CONFIG.MOD_NAME, keyName, toHide);
+					let toHide = !game.settings.get(
+						CONFIG.MOD_NAME,
+						CONFIG.HIDDEN_STAGE_FOR_PLAYERS
+					);
+					game.settings.set(
+						CONFIG.MOD_NAME,
+						CONFIG.HIDDEN_STAGE_FOR_PLAYERS,
+						toHide
+					);
 					StageManager.shared().toggleStageVisibility(false);
 				},
 				toggle: true,
