@@ -7,6 +7,7 @@ export default {
 	MOD_NAME: 'mindblown',
 	TEMPLATES: {
 		MINDBLOWN: 'modules/mindblown/templates/mindblown-ui.hbs',
+		PANEL: 'modules/mindblown/templates/panel.hbs',
 		NPCS: 'modules/mindblown/templates/npcs.hbs',
 		BGS: 'modules/mindblown/templates/bgs.hbs',
 		FOCUS: 'modules/mindblown/templates/focus.hbs',
@@ -30,15 +31,20 @@ export default {
 		BG: 'activeBGs',
 		NPC: 'activeNPCs',
 		FOCUS: 'activeFocus',
+		VFX: 'activeVFXs',
+		LIGHT: 'activeLights',
 	},
 	FAV_CATEGORIES: {
 		BG: 'favBGs',
 		NPC: 'favNPCs',
+		VFX: 'favVFXs',
+		LIGHT: 'favLights',
 		FOCUS: 'favFocus',
 	},
 	DEFAULT_SPRITE_FRAME: 'modules/mindblown/assets/textures/grey_frame.png',
 	DEFAULT_SPRITE_BG: 'modules/mindblown/assets/textures/black-bg.png',
 	CURRENT_STAGE: 'currentStage',
+	STAGE_PRESETS: 'stagePresets',
 	DOCK_REDUCED: 'dockReduced',
-	
+
 };

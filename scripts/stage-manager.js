@@ -23,6 +23,7 @@ export class StageManager extends EventEmitter {
 		VFX_ENDED_TRANSITION: 'vfxEndedTransion',
 		AMBIENT_LIGHTING_ON: 'ambientLightingOn',
 		AMBIENT_LIGHTING_OFF: 'ambientLightingOff',
+		BG_ENDED_RESIZE: 'bgEndedResize',
 	};
 	constructor() {
 		super();
@@ -97,8 +98,8 @@ export class StageManager extends EventEmitter {
 		if (stage.weather) {
 			await this.setWeather(stage.weather);
 		}
-		if(stage.lights) {
-			this.setLights(stage.lights);
+		if (stage.lights) {
+			this.stage.lights = stage.lights;
 		}
 
 		const keyName = IS_GM()
@@ -116,6 +117,8 @@ export class StageManager extends EventEmitter {
 		if (this.stage && this.PIXIApp) {
 			this.stage.setBg(bg);
 			this.stage.bg.pixiOptions.alpha = 1;
+			await this.clearLights();
+			await this.clearTile(Tile.TileType.VFX);
 			await PIXIHandler.setBgOnStage(this.PIXIApp, this.stage.bg);
 		} else {
 			this.initStage(bg);
@@ -239,7 +242,7 @@ export class StageManager extends EventEmitter {
 		let ambientLightingEnabled = this.isAmbientLightingEnabled();
 		if (IS_GM()) {
 			ambientLightingEnabled = !ambientLightingEnabled;
-			game.settings.set(
+			await game.settings.set(
 				CONFIG.MOD_NAME,
 				CONFIG.AMBIENT_LIGHTING_ENABLED,
 				ambientLightingEnabled
@@ -270,7 +273,19 @@ export class StageManager extends EventEmitter {
 		}
 	}
 
-	async addLight(light = null) {
+	async clearLights() {
+		if (this.stage) {
+			this.stage.lights = [];
+			if (this.PIXIApp) {
+				await PIXIHandler.ClearLightsOnStage(this.PIXIApp);
+			}
+			if (IS_GM()) {
+				await this.saveStage(this.stage, 'setLights');
+			}
+		}
+	}
+
+	async addLight(light = null, isPlacingLight = false) {
 		if (!this.stage) {
 			this.initStage();
 		}
@@ -284,10 +299,13 @@ export class StageManager extends EventEmitter {
 				null,
 				Tile.TileType.LIGHT
 			);
+		}
+
+		if (isPlacingLight) {
 			this.stage.addLight(_light);
-			if (IS_GM()) {
-				await this.saveStage(this.stage, 'setLights');
-			}
+		}
+		if (IS_GM()) {
+			await this.saveStage(this.stage, 'setLights');
 		}
 
 		await PIXIHandler.addLightSourceOnStage(this.PIXIApp, _light);
@@ -295,8 +313,21 @@ export class StageManager extends EventEmitter {
 
 	async removeLight(light) {
 		this.stage.removeLight(light);
+
 		if (IS_GM()) {
-			await this.saveStage(this.stage, 'setLights');
+			await this.saveStage(this.stage, 'removeLightFromStage', light);
+		}
+	}
+
+	async removeLightFromStage(light) {
+		if (light && this.stage) {
+			this.stage.removeLight(light);
+			if (this.PIXIApp) {
+				await PIXIHandler.RemoveAmbientLightingLight(
+					this.PIXIApp,
+					light
+				);
+			}
 		}
 	}
 
@@ -305,16 +336,18 @@ export class StageManager extends EventEmitter {
 	}
 
 	async updateLight(light) {
-		if (IS_GM()) {
-			if (this.stage) {
-				this.stage.lights = this.stage.lights.map((l) => {
-					if (l.id === light.id) {
-						return light;
-					}
-					return l;
-				});
+		if (this.stage) {
+			this.stage.lights = this.stage.lights.map((l) => {
+				if (l.id === light.id) {
+					return light;
+				}
+				return l;
+			});
+			if (!IS_GM()) {
+				await PIXIHandler.UpdateLightOnStage(this.PIXIApp, light);
+			} else {
+				await this.saveStage(this.stage, 'updateLight', light);
 			}
-			await this.saveStage(this.stage, 'setLights');
 		}
 	}
 
@@ -326,6 +359,12 @@ export class StageManager extends EventEmitter {
 			await this.setDefaultBg();
 		}
 		this.stage.setLights(lights);
+
+		if (this.stage.lights && this.stage.lights.length > 0) {
+			for (let light of this.stage.lights) {
+				await PIXIHandler.addLightSourceOnStage(this.PIXIApp, light);
+			}
+		}
 	}
 
 	async setFilterEffect(effect) {
@@ -435,7 +474,7 @@ export class StageManager extends EventEmitter {
 		}
 		//SOCKET
 		if (IS_GM()) {
-			await this.saveStage(this.stage, 'cleartile', tileType);
+			await this.saveStage(this.stage, 'clearTile', tileType);
 		}
 	}
 
@@ -491,8 +530,22 @@ export class StageManager extends EventEmitter {
 		}
 	}
 
+	checkForBgPresets(bg) {
+		if (bg.lightsPreset) {
+			this.stage.lights = bg.lightsPreset;
+		}
+		if (bg.vfxPreset) {
+			this.stage.vfx = bg.vfxPreset;
+			this.setVfx(this.stage.vfx);
+		}
+	}
+
 	setIsBgTransitioning(isTransitioning) {
+		const bgChanged = this.isBgTransitioning && !isTransitioning;
 		this.isBgTransitioning = isTransitioning;
+		if (bgChanged && this.stage && this.stage.bg && this.PIXIApp) {
+			this.checkForBgPresets(this.stage.bg);
+		}
 	}
 
 	setIsNpcTransitioning(isTransitioning) {
@@ -520,30 +573,61 @@ export class StageManager extends EventEmitter {
 		);
 	}
 
+	toggleLayerLock(tileType) {
+		if (this.PIXIApp && this.stage) {
+			PIXIHandler.ToggleContainerInteractivity(this.PIXIApp, tileType);
+		}
+	}
+
 	async saveStage(stage, action, actionTileType) {
 		logger('saveStage', stage, action, actionTileType);
-		if (!stage) {
-			if (IS_GM()) {
+		if (IS_GM()) {
+			if (!stage) {
 				await game.settings.set(
 					CONFIG.MOD_NAME,
 					CONFIG.CURRENT_STAGE,
 					null
 				);
+
+				game.socket.emit(`module.${CONFIG.MOD_NAME}`, {
+					action: 'destroy',
+					stage: null,
+				});
+			} else {
+				await game.settings.set(
+					CONFIG.MOD_NAME,
+					CONFIG.CURRENT_STAGE,
+					stage
+				);
+				game.socket.emit(`module.${CONFIG.MOD_NAME}`, {
+					action,
+					stage,
+					actionTileType,
+				});
 			}
-			game.socket.emit(`module.${CONFIG.MOD_NAME}`, {
-				action: 'destroy',
-				stage: null,
-			});
-		} else {
-			await game.settings.set(
-				CONFIG.MOD_NAME,
-				CONFIG.CURRENT_STAGE,
-				stage
-			);
-			game.socket.emit(`module.${CONFIG.MOD_NAME}`, {
-				action,
-				stage,
-				actionTileType,
+		}
+	}
+
+	async saveStagePreset() {
+		if (this.stage.bg?.path) {
+			let bgTiles = await Tile.GetTilesByType(Tile.TileType.BG);
+			bgTiles.map(async (folder, index) => {
+				if (folder) {
+					let bgTile = folder.tiles.find(
+						(tile) => tile.path === this.stage.bg.path
+					);
+					if (bgTile) {
+						bgTile.lightsPreset = this.stage.lights;
+						bgTile.vfxPreset = this.stage.vfx;
+						this.stage.bg.lightsPreset = this.stage.lights;
+						this.stage.bg.vfxPreset = this.stage.vfx;
+						await Tile.UpdateTilesByType(Tile.TileType.BG, bgTiles);
+						MindblownUI.getInstance().updateList(Tile.TileType.BG);
+						ui.notifications.info(
+							`Saved ${this.stage.bg.path} as a preset`
+						);
+					}
+				}
 			});
 		}
 	}
@@ -634,6 +718,12 @@ export class StageManager extends EventEmitter {
 					break;
 				case 'setLights':
 					await this.setLights(stage.lights);
+					break;
+				case 'removeLightFromStage':
+					await this.removeLightFromStage(data.actionTileType);
+					break;
+				case 'updateLight':
+					await this.updateLight(data.actionTileType);
 					break;
 				case 'setStage':
 					await this.setStage(stage);

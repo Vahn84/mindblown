@@ -1,54 +1,75 @@
 {{! prettier-ignore }}
 <div class='mindblown-list mindblown-bgs horizontal-accordion-one {{#unless dockExpanded}}reduced{{/unless}}'>
   <div class="mindblown-list-header">
-    <span style="    display: flex; justify-content: center; align-items: center; flex-wrap:nowrap;">STAGES <span id="filterFavourites" class="active"><i class="fa-regular fa-star"></i><i class="fa-solid fa-star"></i></span></span>
+    <span style="display: flex; justify-content: center; align-items: center; flex-wrap:nowrap;">STAGES <span  data-tiletype="{{panelType}}" class="filterFavourites {{#if bgModeIsFavourite}}active{{/if}}"><i class="fa-regular fa-star"></i><i class="fa-solid fa-star"></i></span>
+    <div class="mindblown-search-wrapper bgs-search-wrapper">
+       <input data-tiletype="{{panelType}}" type="text" class="mindblown-search" placeholder="Search..." value="{{searchValue panelType}}" />
+    </div>
+    </span>
+
 
     <span>
       {{!-- <span class="toolbar refresher" ><span class="title">SYNC FOLDERS</span>  <i class="fa-solid fa-rotate"></i></span> --}}
       {{!-- <span class="toolbar endStream {{#unless hasStage}}hidden{{/unless}}"><span class="title">END STREAM</span>  <i class="fa-solid fa-power-off"></i></span>
       <span class="toolbar forceStream {{#unless hasStage}}hidden{{/unless}}"><span class="title">FORCE STREAM</span>  <i class="fa-solid fa-plug"></i></span>
       <span class="toolbar resetBg {{#unless hasStage}}hidden{{/unless}}"><span class="title">RESET BG</span>  <i class="fa-solid fa-eraser"></i></span> --}}
+      <span class="toolbar pastePanel" data-tiletype="{{panelType}}" ><span class="title">PASTE</span>  <i class="fa-solid fa-clipboard"></i></span>
+      <span class="toolbar savePreset" ><span class="title">SAVE PRESET</span>  <i class="fa-solid fa-floppy-disk"></i></span>
       <span class="toolbar toggleReduce" >{{#if dockExpanded}}<span class="title">MINIMIZE</span>  <i class="fa-solid fa-compress"></i>{{else}}<span class="title">EXPAND</span>  <i class="fa-solid fa-expand"></i>{{/if}}</span>
     </span>
   </div>
   
-<ul class="accordion-container">
-  {{#each bgs as |category key|}}
-  
-  <li data-category="{{key}}" data-tiletype="{{../tileType.BG}}" class="accordion-item {{#isActiveCategory ../activeCategories key ../tileType.BG }}active{{/isActiveCategory}}">
+<ul id="bgsAccordion" class="accordion-container dragzone">
+  {{#each BG as |folder folderIndex|}}
+
+  <li data-folder="{{folder.name}}" data-folderindex="{{folderIndex}}" data-tiletype="{{../panelType}}" class="accordion-item draggable-item {{#if folder.isActive}}active{{/if}}">
     <div
       class="accordion-head mindblown-category"
       style="
-        background: url('{{getFirstPath category}}') center center no-repeat;
+        background: url('{{getFirstPath folder.tiles}}') center center no-repeat;
         background-size: cover;
       "
     >
-      <div class="mindblown-list-title"><span>{{key}}</span></div>
-      <span class="setIsFavourite {{#isFavoriteCategory ../favouriteBGs key ../tileType.BG}}active{{/isFavoriteCategory}}"><i class="fa-regular fa-star"></i><i class="fa-solid fa-star"></i></span>
+      <div class="mindblown-list-title head-title"><span>{{folder.name}}</span></div>
+      <span class="setIsFavourite favbgs {{#if folder.isFavourite}}active{{/if}}"><i class="fa-regular fa-star"></i><i class="fa-solid fa-star"></i></span>
     </div>
-    {{#isActiveCategory ../activeCategories key ../tileType.BG }}
-    <div class="accordion-data">
-      {{#each category as |tile index|}}
+    {{#if folder.isActive}}
+    <div id="{{sanitizeId folder.name}}accordion" class="accordion-data">
+      {{#each folder.tiles as |tile index|}}
       
         <div
-          class="accordion-data-item media-item"
+          
+          class="accordion-data-item media-item draggable-data-item"
           style="
             background: url('{{tile.thumbnail}}') center center no-repeat;
             background-size: cover;
             background-color: black;
           "
           data-tileid="{{tile.id}}"
-          data-category="{{key}}"
+          data-folder="{{folder.name}}"
           data-index="{{index}}"
-          data-tiletype="{{../../tileType.BG}}"
+          data-folderindex="{{folderIndex}}"
+          data-tiletype="{{../../panelType}}"
           data-mediatype="{{tile.mediaType}}" 
           data-src="{{tile.path}}"
         >
+        <div class="accordion-data-item-presets">
+          {{#if tile.vfxPreset}}
+            <div class="accordion-data-item-presets-icon vfx-preset {{#if tile.vfxPresetOff}}off{{/if}}">
+              <i class="fa-solid fa-film"></i>
+            </div>
+          {{/if}}
+          {{#if tile.lightsPreset}}
+            <div class="accordion-data-item-presets-icon lights-preset {{#if tile.lightsPresetOff}}off{{/if}}">
+              <i class="fa-solid fa-lightbulb"></i>
+            </div>
+          {{/if}}
+        </div>
         <div class="media-tooltip"></div>
         </div>
       {{/each}}
       </div>
-    {{/isActiveCategory}}
+    {{/if}}
   </li>
   {{/each}}
 </ul>

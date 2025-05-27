@@ -1,5 +1,6 @@
 import { logger } from './utilities.js';
 import { isImage, isVideo } from './utilities.js';
+import CONFIG from './config.js';
 
 export class Tile {
 	static TileType = {
@@ -21,7 +22,7 @@ export class Tile {
 		this.path = path || null;
 		this.mute = mute || true;
 		this.tileType = tileType || Tile.TileType.BG;
-		this.id = `tile_${this.tileType}_${nameAsId}`;
+		this.id = `tile_${this.tileType}_${nameAsId}_${new Date().getTime()}`;
 		this.loop = loop || true;
 		this.category = category || null;
 		this.mediaType = this.path
@@ -64,5 +65,60 @@ export class Tile {
 
 	setIsDefault(isDefault) {
 		this.isDefault = isDefault;
+	}
+
+	setLightsPreset(lightsPreset) {
+		this.lightsPreset = lightsPreset;
+	}
+
+	setVfxPreset(vfxPreset) {
+		this.vfxPreset = vfxPreset;
+	}
+
+	static async GetTilesByType(tileType = Tile.TileType.BG) {
+		return (await game.user.getFlag(CONFIG.MOD_NAME, tileType)) || [];
+	}
+
+	static async GetTileById(tileType, id, _tiles = null) {
+		if (!tileType || !id) {
+			return null;
+		}
+		const tiles = _tiles ? _tiles : await Tile.GetTilesByType(tileType);
+		for (const index in tiles) {
+			const folder = tiles[index];
+
+			const tileIndex = folder.tiles.findIndex((tile) => tile.id === id);
+			if (tileIndex === -1) {
+				continue;
+			}
+			return folder.tiles[tileIndex];
+		}
+		return null;
+	}
+
+	static async FindFolderById(tileType, id, _tiles = null) {
+		if (!tileType || !id) {
+			return null;
+		}
+		const tiles = _tiles ? _tiles : await Tile.GetTilesByType(tileType);
+		return tiles.find((folder) => folder.id === id) || null;
+	}
+
+	static async UpdateTilesByType(tileType, tiles) {
+		if (!tileType || !tiles) {
+			return;
+		}
+		await game.user.setFlag(CONFIG.MOD_NAME, tileType, tiles);
+	}
+
+	static async UpdateFolder(folder, tileType) {
+		let tiles = await Tile.GetTilesByType(tileType);
+		tiles = tiles.map((f) => {
+			if (f.id === folder.id) {
+				return folder;
+			}
+			return f;
+		});
+		await Tile.UpdateTilesByType(tileType, tiles);
 	}
 }

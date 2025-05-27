@@ -1,0 +1,58 @@
+<div class="mindblown-panel-container {{#if panelClosed}} closed {{else}} open{{/if}}">
+  <div class="mindblown-panel-toggle">
+     <i data-tiletype="{{panelType}}" class="toggle-layer-lock fa-regular {{#isLayerLocked panelType}}fa-lock{{else}}fa-lock-open{{/isLayerLocked}} floating-toggle"></i>
+     <i class="toggle-panel fa-regular {{panelIcon panelType}}"></i> 
+     {{#ifEquals panelType "VFX"}}<i id="openVFXManager" class="floating-toggle fa-regular fa-database"></i>{{/ifEquals}}
+     {{#ifDifferent panelType "VFX" "LIGHT"}}<i data-tiletype="{{panelType}}" class="floating-toggle paste-panel fa-regular fa-clipboard"></i>{{/ifDifferent}}
+  </div>
+
+  <div class="mindblown-panel-content">
+    <div class="mindblown-search-wrapper {{panelType}}-search-wrapper">
+       <input data-tiletype="{{panelType}}" type="text" class="mindblown-search" placeholder="Search..."  value="{{searchValue panelType}}"/>
+       <span data-tiletype="{{panelType}}" class="filterFavourites {{#isFavouriteMode panelType}}active{{/isFavouriteMode}}"><i class="fa-regular fa-star"></i><i class="fa-solid fa-star"></i></span>
+    </div>
+
+    <ul id="{{panelType}}Accordion" class="mindblown-accordion dragzone">
+      {{#with (getList panelType) as |list|}}
+      {{#each list as |folder folderIndex|}}
+      <li class="mindblown-accordion-item accordion-item panel-draggable-item {{#if folder.isActive}}open{{/if}}" data-folder="{{folder.name}}" data-folderindex="{{folderIndex}}"data-tiletype="{{../../panelType}}">
+        <div class="mindblown-accordion-head">
+          {{!-- <span class="drag"><i class="fa-regular fa-grip-lines"></i></span> --}}
+          <span class="mindblown-accordion-title">{{folder.name}}</span>
+           <span class="setIsFavourite {{#if folder.isFavourite}}active{{/if}}"><i class="fa-regular fa-star"></i><i class="fa-solid fa-star"></i></span>
+        </div>
+        {{#if folder.isActive}}
+        <div class="mindblown-accordion-body">
+          <div id="{{sanitizeId folder.name}}accordion" class="mindblown-grid">
+            {{#each folder.tiles as |tile index|}}
+            <div
+              class="mindblown-grid-item  draggable-data-item media-item"
+              {{#ifDifferent ../../../panelType "LIGHT"}}
+              style="background-image: url('{{tile.thumbnail}}'); background-position: top center; background-size: cover;"
+              {{/ifDifferent}}
+              data-tileid="{{tile.id}}"
+              data-folder="{{folder.name}}"
+              data-index="{{index}}"
+              data-folderindex="{{folderIndex}}"
+              data-tiletype="{{../../../panelType}}"
+              data-mediatype="{{tile.mediaType}}" 
+              data-src="{{tile.path}}"
+            >
+              {{#ifEquals ../../../panelType "LIGHT"}}
+                <i class="fa-regular {{tile.icon}}"></i>
+              {{/ifEquals}}
+              
+            </div>
+            {{/each}}
+          </div>
+        </div>
+        {{/if}}
+      </li>
+      {{/each}}
+      {{/with}}
+    </ul>
+  </div>
+  {{#ifDifferent panelType "LIGHT"}}
+      <div class="media-tooltip grid-tooltip {{#ifDifferent panelType "VFX" "FOCUS"}}right{{else}}left{{/ifDifferent}}"></div>
+  {{/ifDifferent}}
+</div>

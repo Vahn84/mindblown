@@ -57,6 +57,7 @@ export class PIXIHandler {
 				autoDensity: false,
 				resizeTo: window,
 				background: '#000000',
+				backgroundAlpha: 0.3,
 				antialias: false,
 			});
 			_PIXIApp.ticker.maxFPS = 30;
@@ -84,6 +85,52 @@ export class PIXIHandler {
 		} catch (error) {
 			logger('Error unloading asset:', error);
 		}
+	}
+
+	static DisableContainerInteractivity(PIXIApp, _containerName) {
+		const containers = [
+			PIXIHandler.PIXI_WRAPPERS.NPC_ID,
+			PIXIHandler.PIXI_WRAPPERS.FOCUS_ID,
+			PIXIHandler.PIXI_WRAPPERS.VFX_ID,
+			PIXIHandler.PIXI_WRAPPERS.LIGHT_ID,
+		];
+
+		for (const containerName of containers) {
+			const container = PIXIApp.stage.getChildByName(containerName);
+			if (container === _containerName) {
+				container.interactiveChildren = false;
+			}
+		}
+	}
+
+	static ToggleContainerInteractivity(PIXIApp, tileType) {
+		let interactive = false;
+		let _containerName = '';
+		switch (tileType) {
+			case Tile.TileType.NPC:
+				_containerName = PIXIHandler.PIXI_WRAPPERS.NPC_ID;
+				break;
+			case Tile.TileType.FOCUS:
+				_containerName = PIXIHandler.PIXI_WRAPPERS.FOCUS_ID;
+				break;
+			case Tile.TileType.VFX:
+				_containerName = PIXIHandler.PIXI_WRAPPERS.VFX_ID;
+				break;
+			case Tile.TileType.LIGHT:
+				_containerName = PIXIHandler.PIXI_WRAPPERS.LIGHT_ID;
+				break;
+			default:
+				_containerName = '';
+				break;
+		}
+
+		const container = PIXIApp.stage.getChildByName(_containerName);
+
+		if (container) {
+			container.interactiveChildren = !container.interactiveChildren;
+			interactive = container.interactiveChildren;
+		}
+		return interactive;
 	}
 
 	static async setDarknessOnStage(PIXIApp, darkness) {
@@ -317,6 +364,24 @@ export class PIXIHandler {
 		PIXIApp.ticker.add(PIXIHandler.bgTickerTransition, this);
 	}
 
+	static async ClearLightsOnStage(PIXIApp) {
+		const lightingContainer = PIXIApp.stage.getChildByName(
+			PIXIHandler.PIXI_WRAPPERS.LIGHT_ID
+		);
+		if (lightingContainer) {
+			lightingContainer.clearLights();
+		}
+	}
+
+	static async ClearVfxOnStage(PIXIApp) {
+		const vfxContainer = PIXIApp.stage.getChildByName(
+			PIXIHandler.PIXI_WRAPPERS.VFX_ID
+		);
+		if (vfxContainer) {
+			vfxContainer.removeChildren();
+		}
+	}
+
 	static async turnOffAmbientLighting(PIXIApp) {
 		const lightingContainer = PIXIApp.stage.getChildByName(
 			PIXIHandler.PIXI_WRAPPERS.LIGHT_ID
@@ -357,7 +422,29 @@ export class PIXIHandler {
 			});
 			lighting.name = PIXIHandler.PIXI_WRAPPERS.LIGHT_ID;
 			PIXIApp.stage.addChild(lighting);
-			StageManager.shared().setIsAmbientLightingOn(true);
+		}
+		StageManager.shared().setIsAmbientLightingOn(true);
+	}
+
+	static UpdateLightOnStage(PIXIApp, light) {
+		if (!light) return;
+
+		const lightingContainer = PIXIApp.stage.getChildByName(
+			PIXIHandler.PIXI_WRAPPERS.LIGHT_ID
+		);
+		if (lightingContainer) {
+			lightingContainer.updateLight(PIXIApp, light);
+		}
+	}
+
+	static RemoveAmbientLightingLight(PIXIApp, light) {
+		if (!light) return;
+
+		const lightingContainer = PIXIApp.stage.getChildByName(
+			PIXIHandler.PIXI_WRAPPERS.LIGHT_ID
+		);
+		if (lightingContainer) {
+			lightingContainer.removeLight(light);
 		}
 	}
 
@@ -520,13 +607,6 @@ export class PIXIHandler {
 			}
 			logger('setting bg sprite Name finally');
 
-			if (
-				bgContainer &&
-				StageManager.shared().stage?.bg?.mediaType ===
-					Tile.MediaType.IMAGE
-			) {
-				// bgContainer.cacheAsBitmap = true;
-			}
 			StageManager.shared().setIsBgTransitioning(false);
 
 			StageManager.shared().dispatchEvent(
@@ -626,16 +706,23 @@ export class PIXIHandler {
 
 		// Change darkness dynamically
 		// lighting.setDarknessLevel(0.2); // sunrise
+		let lastResizeTime = performance.now();
+		let lastWindowSize = {
+			width: window.innerWidth,
+			height: window.innerHeight,
+		};
+		let resizeHistory = [];
 
 		window.addEventListener('resize', () => {
-			PIXIHandler.ResizeStage(
-				PIXIApp,
-				originalWidth,
-				originalHeight,
-				true
-			);
+			requestAnimationFrame(() => {
+				PIXIHandler.ResizeStage(
+					StageManager.shared().PIXIApp,
+					lastWindowSize.width,
+					lastWindowSize.height,
+					true
+				);
+			});
 		});
-
 		PIXIApp.renderer.view.addEventListener('webglcontextrestored', () => {
 			const ambientLightingEnabled =
 				StageManager.shared().isAmbientLightingEnabled();
@@ -907,6 +994,35 @@ export class PIXIHandler {
 
 		const bgTile = StageManager.shared().stage?.bg;
 
+		const lightingContainer = PIXIApp.stage.getChildByName(
+			PIXIHandler.PIXI_WRAPPERS.LIGHT_ID
+		);
+		if (lightingContainer) {
+			StageManager.shared().addEventListener(
+				StageManager.EVENTS.BG_ENDED_RESIZE,
+				async () => {
+					setTimeout(() => {
+						requestAnimationFrame(() => {
+							lightingContainer.resize(
+								PIXIApp,
+								{
+									width: window.innerWidth,
+									height: window.innerHeight,
+								},
+								bgContainer.getChildByName(
+									PIXIHandler.PIXI_DO.BG_ID
+								)
+							);
+							StageManager.shared().removeEventListener(
+								StageManager.EVENTS.BG_ENDED_RESIZE,
+								this
+							);
+						});
+					}, 300);
+				}
+			);
+		}
+
 		if (!bgTile?.isDefault) {
 			PIXIHandler.ResizeStageBg(
 				bgSprite,
@@ -918,20 +1034,6 @@ export class PIXIHandler {
 			bgSprite.width = window.innerWidth;
 			bgSprite.height = window.innerHeight;
 			bgSprite.position.set(0, 0);
-		}
-
-		const lightingContainer = PIXIApp.stage.getChildByName(
-			PIXIHandler.PIXI_WRAPPERS.LIGHT_ID
-		);
-		if (lightingContainer) {
-			lightingContainer.resize(
-				PIXIApp,
-				{
-					width: window.innerWidth,
-					height: window.innerHeight,
-				},
-				bgSprite
-			);
 		}
 
 		const npc = StageManager.shared().stage?.npc;
@@ -993,6 +1095,11 @@ export class PIXIHandler {
 		PIXIHandler.AdjustImageToCover(
 			{ width: screenWidth, height: screenHeight },
 			blurryBgSprite
+		);
+
+		StageManager.shared().dispatchEvent(
+			StageManager.EVENTS.BG_ENDED_RESIZE,
+			{}
 		);
 
 		// Maintain particle emitter's relative position on resize
@@ -1285,6 +1392,9 @@ export class PIXIHandler {
 			// Prevent sprite drag while resizing
 			sprite.dragging = false;
 			sprite.dragOffset = null;
+			if (!sprite.pixiOptionsRuntime) {
+				sprite.pixiOptionsRuntime = {};
+			}
 			sprite.pixiOptionsRuntime.isResizing =
 				tile.pixiOptionsRuntime.isResizing = true;
 			// Listen on stage for global pointermove/up

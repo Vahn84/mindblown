@@ -5,32 +5,27 @@ import { StageManager } from './stage-manager.js';
 import { Tile } from './tile.js';
 import { IS_GM, logger } from './utilities.js';
 
+export const templates = [
+	CONFIG.TEMPLATES.MINDBLOWN,
+	CONFIG.TEMPLATES.BGS,
+	CONFIG.TEMPLATES.PANEL,
+];
+
 export async function setupModule() {
 	console.log('Theatre of the Mind Manager | Setup module');
-
-	const templates = [
-		CONFIG.TEMPLATES.MINDBLOWN,
-		CONFIG.TEMPLATES.NPCS,
-		CONFIG.TEMPLATES.BGS,
-		CONFIG.TEMPLATES.FOCUS,
-		CONFIG.TEMPLATES.VFX,
-		CONFIG.TEMPLATES.LIGH,
-	];
 
 	try {
 		// Load all templates
 		await loadTemplates(templates);
 
 		// Explicitly register partials
-		const [bgs, npcs, focus] = await Promise.all([
+		const [bgs, panel] = await Promise.all([
 			getTemplate(CONFIG.TEMPLATES.BGS),
-			getTemplate(CONFIG.TEMPLATES.NPCS),
-			getTemplate(CONFIG.TEMPLATES.FOCUS),
+			getTemplate(CONFIG.TEMPLATES.PANEL),
 		]);
 
 		Handlebars.registerPartial('bgs', bgs);
-		Handlebars.registerPartial('npcs', npcs);
-		Handlebars.registerPartial('focus', focus);
+		Handlebars.registerPartial('panel', panel);
 
 		Handlebars.registerHelper(
 			'isActiveCategory',
@@ -52,12 +47,39 @@ export async function setupModule() {
 		);
 		Handlebars.registerHelper(
 			'isFavoriteCategory',
-			function (favouriteBGs, category, tileType, options) {
-				if (!favouriteBGs || !category || !tileType) {
+			function (category, tileType, listOfFavourites, options) {
+				if (!category || !tileType) {
 					return options.inverse(this);
 				}
 
-				let isAlreadyFav = favouriteBGs.find(
+				const instance = MindblownUI.getInstance();
+				if (!listOfFavourites) {
+					switch (tileType) {
+						case Tile.TileType.BG:
+							listOfFavourites = instance.favouriteBGs;
+							break;
+						case Tile.TileType.NPC:
+							listOfFavourites = instance.favouriteNPCs;
+							break;
+						case Tile.TileType.FOCUS:
+							listOfFavourites = instance.favouriteFocus;
+							break;
+						case Tile.TileType.VFX:
+							listOfFavourites = instance.favouriteVFXs;
+							break;
+						case Tile.TileType.LIGHT:
+							listOfFavourites = instance.favouriteLights;
+							break;
+						default:
+							break;
+					}
+				}
+
+				if (!listOfFavourites) {
+					return options.inverse(this);
+				}
+
+				let isAlreadyFav = listOfFavourites.find(
 					(cat) => cat === category
 				);
 
@@ -69,48 +91,82 @@ export async function setupModule() {
 			}
 		);
 
+		Handlebars.registerHelper(
+			'isFavouriteMode',
+			function (tileType, options) {
+				const instance = MindblownUI.getInstance();
+				return instance.isFavouriteMode[tileType]
+					? options.fn(this)
+					: options.inverse(this);
+			}
+		);
+
 		Handlebars.registerHelper('ifEquals', function (arg1, arg2, options) {
 			return arg1 == arg2 ? options.fn(this) : options.inverse(this);
 		});
 
+		Handlebars.registerHelper('ifDifferent', function (value, ...args) {
+			const options = args.pop();
+			return args.includes(value)
+				? options.inverse(this)
+				: options.fn(this);
+		});
+
 		Handlebars.registerHelper(
-			'currentlyPlaying',
-			function (array, key, tileType, options) {
-				logger('crrentlyPlaying', array, key, tileType);
-				if (!array || !key) return options.inverse(this);
-				const currentStage = StageManager.shared().getCurrentStage();
-				let isActive = false;
+			'isLayerLocked',
+			function (panelType, options) {
+				const instance = MindblownUI.getInstance();
 
-				if (currentStage) {
-					switch (tileType) {
-						case Tile.TileType.BG:
-							isActive = currentStage.bg?.id === array[key]?.id;
-							break;
-						case Tile.TileType.NPC:
-							isActive = currentStage.npc?.id === array[key]?.id;
-							break;
-						case Tile.TileType.FOCUS:
-							isActive =
-								currentStage.focus?.id === array[key]?.id;
-							break;
-						case Tile.TileType.VFX:
-							isActive = currentStage.vfxs?.some(
-								(vfx) => vfx.id === array[key]?.id
-							);
-							break;
+				// Check your internal logic per panelType
+				const locked = instance.isLayerLocked(panelType); // your own method
 
-						default:
-							break;
-					}
-				}
-
-				if (isActive) {
-					return options.fn(this); // Render the block
-				} else {
-					return options.inverse(this); // Else block ({{else}})
-				}
+				return locked ? options.fn(this) : options.inverse(this);
 			}
 		);
+
+		Handlebars.registerHelper('getList', function (tileType, options) {
+			const instance = MindblownUI.getInstance();
+			return instance[tileType] || [];
+		});
+
+		Handlebars.registerHelper('sanitizeId', function (str) {
+			if (typeof str !== 'string') return '';
+
+			// Convert to lowercase
+			let sanitized = str.toLowerCase();
+
+			// Replace spaces and special characters with hyphens
+			sanitized = sanitized.replace(/[^a-z0-9\-_:.]/g, '-');
+
+			// Ensure it doesn't start with a number (IDs should start with a letter)
+			if (/^[^a-z]/.test(sanitized)) {
+				sanitized = 'id-' + sanitized;
+			}
+
+			return sanitized;
+		});
+
+		Handlebars.registerHelper('searchValue', function (tileType) {
+			if (!tileType) return '';
+			const instance = MindblownUI.getInstance();
+			const searchValue = instance.search[tileType];
+			return searchValue;
+		});
+
+		Handlebars.registerHelper('panelIcon', function (panelType) {
+			switch (panelType) {
+				case Tile.TileType.NPC:
+					return 'fa-face-smile';
+				case Tile.TileType.FOCUS:
+					return 'fa-users-rectangle';
+				case Tile.TileType.LIGHT:
+					return 'fa-lightbulb';
+				case Tile.TileType.VFX:
+					return 'fa-film';
+				default:
+					return 'fa-circle'; // fallback icon
+			}
+		});
 
 		Handlebars.registerHelper('getFirstPath', function (array) {
 			if (!Array.isArray(array) || array.length === 0) return '';

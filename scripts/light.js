@@ -3,7 +3,7 @@ import {
 	smokePatchColorationShader,
 	sunburstColorationShader,
 	torchIlluminationShader,
-    torchColorationShader,
+	torchColorationShader,
 	vertexShader,
 } from './shaders.js';
 import { getColorFromHex } from './utilities.js';
@@ -13,6 +13,7 @@ export class Light {
 		illumination: 'LightMeshIllumination',
 		coloration: 'LightMeshColoration',
 	};
+
 	static TYPE = {
 		none: 'none',
 		pulse: 'pulse',
@@ -20,6 +21,29 @@ export class Light {
 		sunburst: 'sunburst',
 		torch: 'torch',
 	};
+
+	static ICONS = {
+		[Light.TYPE.none]: 'fa-circle',
+		[Light.TYPE.pulse]: 'fa-wave-sine',
+		[Light.TYPE.smokePatch]: 'fa-smog',
+		[Light.TYPE.sunburst]: 'fa-sun',
+		[Light.TYPE.torch]: 'fa-fire',
+	};
+
+	static LIST = [
+		{
+			name: 'Basic',
+			id: 'basic',
+			isFavourite: false,
+			isActive: false,
+			tiles: Object.keys(Light.TYPE).map((type) => ({
+				id: type,
+				name: type,
+				type: type,
+				icon: Light.ICONS[type],
+			})),
+		},
+	];
 
 	static PRESETS = {
 		[Light.TYPE.none]: {

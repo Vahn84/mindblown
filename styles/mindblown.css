@@ -91,6 +91,7 @@ canvas#mbCanvas.hidden {
 .mindblown-ui #bgsWrapper.mindblown-accordion-wrapper {
 	background: #b7b7b71b;
 	/* backdrop-filter: blur(5px); */
+	overflow: visible;
 }
 
 .mindblown-ui .columnWrapper {
@@ -98,31 +99,37 @@ canvas#mbCanvas.hidden {
 	justify-content: space-around;
 }
 
-.mindblown-ui #bgsWrapper #filterFavourites {
+.mindblown-ui .filterFavourites {
 	cursor: pointer;
 	margin-left: 2px;
 }
 
-.mindblown-ui #bgsWrapper #filterFavourites:hover {
+.mindblown-ui .filterFavourites:hover {
 	background-color: #c9a84c;
 }
 
-.mindblown-ui #bgsWrapper .setIsFavourite.active i.fa-solid.fa-solid,
-.mindblown-ui #bgsWrapper .setIsFavourite i.fa-regular.fa-star,
-.mindblown-ui #bgsWrapper #filterFavourites.active i.fa-solid.fa-solid,
-.mindblown-ui #bgsWrapper #filterFavourites i.fa-regular.fa-star {
+.mindblown-ui .setIsFavourite.active i.fa-solid.fa-solid,
+.mindblown-ui .setIsFavourite i.fa-regular.fa-star,
+.mindblown-ui .filterFavourites.active i.fa-solid.fa-solid,
+.mindblown-ui .filterFavourites i.fa-regular.fa-star {
 	display: flex;
 }
 
-.mindblown-ui #bgsWrapper .setIsFavourite i.fa-solid.fa-star,
-.mindblown-ui #bgsWrapper .setIsFavourite.active i.fa-regular.fa-star,
-.mindblown-ui #bgsWrapper #filterFavourites i.fa-solid.fa-star,
-.mindblown-ui #bgsWrapper #filterFavourites.active i.fa-regular.fa-star {
+.mindblown-ui .setIsFavourite i.fa-solid.fa-star,
+.mindblown-ui .setIsFavourite.active i.fa-regular.fa-star,
+.mindblown-ui .filterFavourites i.fa-solid.fa-star,
+.mindblown-ui .filterFavourites.active i.fa-regular.fa-star {
 	display: none;
 }
 
-.mindblown-ui #bgsWrapper .setIsFavourite {
+.mindblown-ui .setIsFavourite {
+	position: relative;
+	cursor: pointer;
+}
+
+.mindblown-ui .setIsFavourite.favbgs {
 	position: absolute;
+	cursor: pointer;
 	right: 5px;
 	top: 5px;
 	cursor: pointer;
@@ -132,35 +139,37 @@ canvas#mbCanvas.hidden {
 .mindblown-ui #focusWrapper.mindblown-accordion-wrapper,
 .mindblown-ui #vfxWrapper.mindblown-accordion-wrapper,
 .mindblown-ui #lightWrapper.mindblown-accordion-wrapper {
-	background: #b7b7b71b;
+	background: transparent;
 	width: 210px;
 	position: absolute;
-	bottom: 149px;
+	bottom: 130px;
+	border-top-left-radius: 12px;
+	border-top-right-radius: 12px;
 }
 
 .mindblown-ui #npcsWrapper.mindblown-accordion-wrapper.reduced,
-.mindblown-ui #npcsWrapper.mindblown-accordion-wrapper.reduced,
+.mindblown-ui #focusWrapper.mindblown-accordion-wrapper.reduced,
 .mindblown-ui #vfxWrapper.mindblown-accordion-wrapper.reduced,
 .mindblown-ui #lightWrapper.mindblown-accordion-wrapper.reduced {
-	bottom: 29px;
+	bottom: 30px;
 }
 
 .mindblown-ui #focusWrapper.mindblown-accordion-wrapper {
 	/* display: none; */
-	right: 100px;
+	right: 130px;
 }
 .mindblown-ui #vfxWrapper.mindblown-accordion-wrapper {
 	/* display: none; */
-	right: 320px;
+	right: 345px;
 }
 
 .mindblown-ui #npcsWrapper.mindblown-accordion-wrapper {
 	/* display: none; */
-	left: 100px;
+	left: 130px;
 }
 .mindblown-ui #lightWrapper.mindblown-accordion-wrapper {
 	/* display: none; */
-	left: 320px;
+	left: 345px;
 }
 
 .mindblown-ui .horizontal-accordion-one {
@@ -174,7 +183,7 @@ canvas#mbCanvas.hidden {
 }
 
 .mindblown-ui .horizontal-accordion-one.mindblown-bgs {
-	height: 150px;
+	height: 130px;
 	overflow: visible;
 }
 
@@ -196,6 +205,9 @@ canvas#mbCanvas.hidden {
 	align-items: center;
 	position: absolute;
 	z-index: 1;
+	left: 50%;
+	transform: translateX(-50%);
+	bottom: 110px;
 }
 
 .mindblown-ui .weatherToolbar.reduced {
@@ -277,7 +289,7 @@ canvas#mbCanvas.hidden {
 }
 
 .mindblown-ui .horizontal-accordion-one .accordion-container {
-	width: max-content;
+	width: 100%;
 	position: relative;
 	display: flex;
 	flex-direction: row;
@@ -286,7 +298,7 @@ canvas#mbCanvas.hidden {
 	margin: 0;
 	height: 100%;
 	overflow: visible;
-	/* overflow-x: hidden; */
+	z-index: 2;
 }
 .mindblown-ui
 	.horizontal-accordion-one
@@ -344,8 +356,8 @@ canvas#mbCanvas.hidden {
 	.accordion-item.active
 	.accordion-head
 	.mindblown-list-title {
-		    background: #124d0c9c;
-	}
+	background: #124d0c;
+}
 .mindblown-ui
 	.horizontal-accordion-one
 	.accordion-container
@@ -361,6 +373,7 @@ canvas#mbCanvas.hidden {
 	/* backdrop-filter: blur(2px); */
 	background: rgba(0, 0, 0, 0.7);
 	text-shadow: 2px 2px 4px #000000;
+	padding: 0 5px;
 }
 
 .mindblown-ui
@@ -419,11 +432,15 @@ canvas#mbCanvas.hidden {
 	.accordion-data
 	.accordion-data-item {
 	/* background-blend-mode: luminosity; */
-	min-width: 100px;
-	min-height: 100px;
+	min-width: 80px;
+	min-height: 80px;
 	transition: all ease-in 0.4s;
 	margin-left: 10px;
 	border-radius: 8px;
+	display: flex;
+	justify-content: flex-end;
+	border: 3px solid black;
+	position: relative;
 }
 
 .mindblown-ui
@@ -434,6 +451,73 @@ canvas#mbCanvas.hidden {
 	.accordion-data-item:hover {
 	background-blend-mode: normal;
 	cursor: pointer;
+}
+
+.mindblown-ui
+	.horizontal-accordion-one
+	.accordion-container
+	.accordion-item.active
+	.accordion-data
+	.accordion-data-item
+	.accordion-data-item-presets {
+	display: flex;
+	align-items: start;
+}
+.mindblown-ui
+	.horizontal-accordion-one
+	.accordion-container
+	.accordion-item.active
+	.accordion-data
+	.accordion-data-item
+	.accordion-data-item-presets
+	.accordion-data-item-presets-icon {
+	cursor: pointer;
+	background-color: white;
+	color: black;
+}
+.mindblown-ui
+	.horizontal-accordion-one
+	.accordion-container
+	.accordion-item.active
+	.accordion-data
+	.accordion-data-item
+	.accordion-data-item-presets
+	.accordion-data-item-presets-icon.off {
+	background-color: black;
+	color: white;
+}
+
+.mindblown-ui
+	.horizontal-accordion-one
+	.accordion-container
+	.accordion-item.active
+	.accordion-data
+	.accordion-data-item
+	.accordion-data-item-presets
+	.accordion-data-item-presets-icon {
+	height: 20px;
+	width: 20px;
+	background-color: white;
+	color: black;
+	margin-right: 5px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-bottom-left-radius: 5px;
+	border-bottom-right-radius: 5px;
+	font-size: 12px;
+}
+
+.mindblown-ui
+	.horizontal-accordion-one
+	.accordion-container
+	.accordion-item.active
+	.accordion-data
+	.accordion-data-item
+	.accordion-data-item-presets
+	.accordion-data-item-presets-icon.off {
+	background-color: black;
+	color: white;
 }
 
 .mindblown-ui
@@ -452,8 +536,8 @@ canvas#mbCanvas.hidden {
 	.accordion-container
 	.accordion-item.active
 	.accordion-head {
-	width: 150px;
-	min-width: 150px;
+	/* width: 150px;
+	min-width: 150px; */
 }
 
 .media-tooltip {
@@ -476,6 +560,20 @@ canvas#mbCanvas.hidden {
 
 .media-tooltip.active {
 	display: flex;
+}
+
+.grid-tooltip {
+	top: 0;
+	width: max-content;
+	height: fit-content;
+}
+
+.grid-tooltip.left {
+	right: 210px;
+}
+
+.grid-tooltip.right {
+	left: 210px;
 }
 
 .media-tooltip img,
@@ -523,7 +621,7 @@ canvas#mbCanvas.hidden {
 	.accordion-item.active
 	.accordion-head
 	span {
-	font-size:18px;
+	font-size: 14px;
 }
 .mindblown-ui
 	.horizontal-accordion-one
@@ -612,21 +710,89 @@ canvas#mbCanvas.hidden {
 	overflow: hidden;
 	transition: height 0.5s ease;
 	height: 50px;
-	box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.4);
+	/* box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.4); */
+	overflow: visible;
+	display: flex;
+	flex-direction: column;
 }
 
 .mindblown-panel-container.open {
 	will-change: height;
-	height: 600px;
+	height: auto;
+	max-height: 600px;
+}
+
+.mindblown-panel-container .mindblown-panel-content {
+	display: none;
+}
+
+.mindblown-panel-container.open .mindblown-panel-content {
+	display: flex;
 }
 
 .mindblown-panel-toggle {
 	cursor: pointer;
 	text-align: center;
 	padding: 10px;
-	font-size: 24px;
 	color: white;
 	background: rgba(19, 19, 19, 0.8);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font-size: 14px;
+	border-top-left-radius: 8px;
+	border-top-right-radius: 8px;
+}
+
+.mindblown-panel-toggle i {
+	background: brown;
+	padding: 5px;
+	border-radius: 50%;
+}
+
+.mindblown-panel-toggle i.floating-toggle {
+	position: absolute;
+	top: -12px;
+	z-index: 1;
+	width: 30px;
+	height: 30px;
+	align-content: center;
+}
+
+.mindblown-panel-toggle i.floating-toggle:last-child {
+	right: 10px;
+}
+
+.mindblown-panel-toggle i.floating-toggle:nth-child(2) {
+	right: 20px;
+}
+
+.mindblown-panel-toggle i.floating-toggle.toggle-layer-lock {
+	left: 10px;
+	padding: 8px 8px;
+	background-color: darkolivegreen;
+	width: 32px;
+	height: 32px;
+}
+
+.mindblown-panel-toggle i.floating-toggle.clear-tile {
+	background-color: crimson;
+}
+
+.mindblown-panel-toggle i.floating-toggle.paste-panel {
+	background-color: coral;
+	padding: 5px 7px;
+}
+
+.mindblown-panel-toggle i#openVFXManager.floating-toggle {
+	background-color: #ffc107;
+	padding: 5px 6px;
+}
+
+.mindblown-panel-toggle .toggle-panel {
+	font-size: 20px;
+	background: transparent;
+	width: 100%;
 }
 
 .mindblown-panel-content {
@@ -635,13 +801,72 @@ canvas#mbCanvas.hidden {
 	padding: 10px;
 }
 
+.mindblown-panel-container.closed .mindblown-panel-content {
+	display: none;
+}
+
+.mindblown-panel-container.open .mindblown-panel-content {
+	display: flex;
+	flex-direction: column;
+}
+
+.mindblown-search-wrapper {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin-bottom: 10px;
+}
+
+.mindblown-search-wrapper input {
+	margin-right: 5px;
+	border-radius: 8px;
+	color: white;
+}
+
+.mindblown-search-wrapper.bgs-search-wrapper {
+	margin: 0px;
+}
+
+.mindblown-search-wrapper.bgs-search-wrapper input {
+	font-size: 11px;
+	height: 22px;
+}
+
+.mindblown-search::-webkit-input-placeholder {
+	color: #888;
+}
+.mindblown-search::-moz-placeholder {
+	color: #888;
+}
+.mindblown-search:-ms-input-placeholder {
+	color: #888;
+}
+.mindblown-search::placeholder {
+	color: #888;
+}
+
+.mindblown-panel-content .setIsFavourite {
+	/* right: 10px;
+	top: 10px; */
+}
+
+.mindblown-panel-content .mindblown-accordion-title {
+	flex-grow: 1;
+	margin-right: 20px;
+	height: 100%;
+	display: flex;
+	justify-content: flex-start;
+	align-items: center;
+	max-height: 600px;
+}
+
 /* Accordion styling */
 .mindblown-accordion {
 	list-style: none;
 	padding: 0;
 	margin: 0;
-	padding-bottom: 50px;
 	height: fit-content;
+	scrollbar-color: #3e522c var(--color-scrollbar-track);
 }
 
 .mindblown-accordion-item {
@@ -651,9 +876,13 @@ canvas#mbCanvas.hidden {
 .mindblown-accordion-head {
 	background: #333;
 	color: white;
-	padding: 10px;
+	padding: 0px 10px;
 	cursor: pointer;
 	border-radius: 8px;
+	position: relative;
+	display: flex;
+	height: 30px;
+	align-items: center;
 }
 
 .mindblown-accordion-body {
@@ -663,15 +892,16 @@ canvas#mbCanvas.hidden {
 }
 
 .mindblown-accordion-item.open .mindblown-accordion-head {
-	background: #a52a2a;
+	background: #3e522c;
 }
 
 /* Grid inside the accordion */
 .mindblown-grid {
 	display: grid;
-	grid-template-columns: repeat(2, 1fr);
+	grid-template-columns: repeat(3, 1fr);
 	gap: 8px;
 	margin-top: 10px;
+	padding: 2px;
 }
 
 .mindblown-grid-item {
@@ -680,5 +910,10 @@ canvas#mbCanvas.hidden {
 	aspect-ratio: 1 / 1;
 	border-radius: 8px;
 	cursor: pointer;
-	background-color: #b1b1b1;
+	background-color: black;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font-size: 25px;
+	border: 3px solid black;
 }

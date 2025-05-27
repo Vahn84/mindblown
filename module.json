@@ -47,7 +47,7 @@
 		}
 	],
 	"styles": ["styles/mindblown.css"],
-	"scripts": ["lib/custom-pixi-particles.umd.js"],
+	"scripts": ["lib/custom-pixi-particles.umd.js", "lib/Sortable.js"],
 
 	"esmodules": [
 		"scripts/shaders.js",

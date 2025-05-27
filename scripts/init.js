@@ -1,11 +1,12 @@
 import { VFX } from './effects.js';
 import { Stage } from './stage.js';
 import { Tile } from './tile.js';
-import { IS_GM, logger } from './utilities.js';
+import { IS_GM, logger, normalizeTiles } from './utilities.js';
 import { StageManager } from './stage-manager.js';
 import CONFIG from './config.js';
 import { initSettings, setupModule } from './setup.js';
 import { MindblownUI } from './mindblown.js';
+import { Light } from './light.js';
 
 // import { Stage } from './stage.js';
 
@@ -17,6 +18,12 @@ Hooks.on('ready', () => {
 	StageManager.shared().getCurrentStageFromCache();
 	// StageManager.shared().destroyPIXIApp();
 	if (!game.user.isGM) return;
+
+	let lights = game.user.getFlag(CONFIG.MOD_NAME, Tile.TileType.LIGHT);
+	if (!lights) {
+		game.user.setFlag(CONFIG.MOD_NAME, Tile.TileType.LIGHT, Light.LIST);
+	}
+
 
 	if ($('#taskbar').length > 0) {
 		const trpTaskbar = $('#taskbar');
@@ -43,18 +50,18 @@ Hooks.on('ready', () => {
 		});
 	}
 
-	const ws = new WebSocketServer({ port: 2323 });
-	ws.on('connection', (socket) => {
-		socket.on('message', (msg) => {
-			try {
-				const data = JSON.parse(msg);
-				logger('data', data);
-				// handleStreamDeckCommand(data);
-			} catch (e) {
-				console.error('Invalid Stream Deck message:', e);
-			}
-		});
-	});
+	// const ws = new WebSocketServer({ port: 2323 });
+	// ws.on('connection', (socket) => {
+	// 	socket.on('message', (msg) => {
+	// 		try {
+	// 			const data = JSON.parse(msg);
+	// 			logger('data', data);
+	// 			// handleStreamDeckCommand(data);
+	// 		} catch (e) {
+	// 			console.error('Invalid Stream Deck message:', e);
+	// 		}
+	// 	});
+	// });
 });
 
 Hooks.on('sequencerReady', () => {
@@ -136,12 +143,12 @@ Hooks.on('getSceneControlButtons', (controls) => {
 				name: 'hide-players-stage',
 				title: 'Hide Stage for Players',
 				icon: 'fas fa-eye-slash',
-				onClick: () => {
+				onClick: async () => {
 					let toHide = !game.settings.get(
 						CONFIG.MOD_NAME,
 						CONFIG.HIDDEN_STAGE_FOR_PLAYERS
 					);
-					game.settings.set(
+					await game.settings.set(
 						CONFIG.MOD_NAME,
 						CONFIG.HIDDEN_STAGE_FOR_PLAYERS,
 						toHide

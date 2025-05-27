@@ -32,20 +32,20 @@ export class AmbientLightingManager extends PIXI.Container {
 		this._darkness.eventMode = 'none'; // for PIXI v7+ (if you're using it)
 
 		const fragment = `
-precision mediump float;
+			precision mediump float;
 
-varying vec2 vTextureCoord;
-uniform sampler2D uLightMask;
-uniform float uDarkness;
+			varying vec2 vTextureCoord;
+			uniform sampler2D uLightMask;
+			uniform float uDarkness;
 
-void main(void) {
-  vec2 uv = vTextureCoord;
-  float light = texture2D(uLightMask, uv).a;
+			void main(void) {
+			vec2 uv = vTextureCoord;
+			float light = texture2D(uLightMask, uv).a;
 
-  float alpha = uDarkness * (1.0 - light);
-  gl_FragColor = vec4(0.0, 0.0, 0.0, alpha);
-}
-`;
+			float alpha = uDarkness * (1.0 - light);
+			gl_FragColor = vec4(0.0, 0.0, 0.0, alpha);
+			}
+			`;
 
 		this._darknessFilter = new PIXI.Filter(undefined, fragment, {
 			uLightMask: this.lightMask,
@@ -95,6 +95,7 @@ void main(void) {
 		};
 
 		lightMeshContainer.onDoubleClick = openConfig;
+		this.removeLight(tile);
 		this.lightContainer.addChild(lightMeshContainer);
 		this.addDragAndDrop(PIXIApp, lightMeshContainer);
 
@@ -110,6 +111,10 @@ void main(void) {
 		);
 
 		return lightMeshContainer;
+	}
+
+	updateLight(PIXIApp, lightTile) {
+		this.addLight(PIXIApp, lightTile);
 	}
 
 	setLightScaleAndPosition(
@@ -184,6 +189,16 @@ void main(void) {
 			lightMeshContainer.cleanup();
 		}
 		this.lightContainer.removeChildren();
+	}
+
+	removeLight(lightTile) {
+		for (const lightMeshContainer of this.lightContainer.children) {
+			if (lightMeshContainer.name === lightTile.id) {
+				lightMeshContainer.cleanup();
+				this.lightContainer.removeChild(lightMeshContainer);
+				break;
+			}
+		}
 	}
 
 	stopUpdatingLightingMask() {
@@ -290,6 +305,7 @@ void main(void) {
 					if (
 						typeof lightMeshContainer.onDoubleClick === 'function'
 					) {
+						lightMeshContainer.dragging = false;
 						lightMeshContainer.onDoubleClick();
 					}
 					lastClickTime = clickTime;
@@ -306,6 +322,7 @@ void main(void) {
 				}
 			})
 			.on('pointerup', async () => {
+				const shouldUpdate = lightMeshContainer.dragging ? true : false;
 				lightMeshContainer.dragging = false;
 				lightMeshContainer.dragOffset = null;
 
@@ -367,7 +384,9 @@ void main(void) {
 						lightMeshContainer.pixiOptionsRuntime;
 					tile.pixiOptions = lightMeshContainer.pixiOptions;
 
-					StageManager.shared().updateLight(tile);
+					if (shouldUpdate) {
+						StageManager.shared().updateLight(tile);
+					}
 				}
 			})
 			.on('pointerupoutside', () => {

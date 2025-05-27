@@ -66,6 +66,18 @@ export class LightSource extends PIXI.Container {
 		return this;
 	}
 
+	stopTicker() {
+		if (this._ticker && this._tickerUpdate) {
+			this._ticker.remove(this._tickerUpdate);
+		}
+	}
+
+	startTicker() {
+		if (this._ticker && this._tickerUpdate) {
+			this._ticker.add(this._tickerUpdate);
+		}
+	}
+
 	static create(PIXIApp, pixiOptions, callback) {
 		const lightSource = new LightSource(pixiOptions);
 
