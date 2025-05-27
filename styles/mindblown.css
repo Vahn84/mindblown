@@ -558,6 +558,17 @@ canvas#mbCanvas.hidden {
 	align-items: center;
 }
 
+.media-tooltip .media-name {
+	position: absolute;
+	bottom: 10px;
+	width: 100%;
+	text-align: center;
+	height: auto;
+	background: rgba(0, 0, 0, 0.6);
+	padding: 8px;
+	word-wrap: break-word;
+}
+
 .media-tooltip.active {
 	display: flex;
 }

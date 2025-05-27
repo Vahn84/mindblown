@@ -30,6 +30,7 @@
               {{#ifDifferent ../../../panelType "LIGHT"}}
               style="background-image: url('{{tile.thumbnail}}'); background-position: top center; background-size: cover;"
               {{/ifDifferent}}
+              data-name="{{tile.name}}"
               data-tileid="{{tile.id}}"
               data-folder="{{folder.name}}"
               data-index="{{index}}"

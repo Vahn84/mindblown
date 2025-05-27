@@ -712,6 +712,7 @@ export class MindblownUI extends FormApplication {
 			const $target = $(event.target);
 			const type = $target.data('mediatype');
 			const src = $target.data('src');
+			const name = $target.data('name');
 
 			let content = '';
 			if (type === Tile.MediaType.IMAGE) {
@@ -719,7 +720,9 @@ export class MindblownUI extends FormApplication {
 			} else if (type === Tile.MediaType.VIDEO) {
 				content = `<video src="${src}" autoplay muted loop class="media-content" style="width:100%; height: auto;"></video>`;
 			}
-
+			if(name){
+				content += `<div class="media-name">${name}</div>`;
+			}
 			if (content && content.length > 0) {
 				let $tooltip = $target.find('.media-tooltip');
 				if (isAPanel) {
