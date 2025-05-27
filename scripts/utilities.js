@@ -148,6 +148,7 @@ export async function addVfxFromPath(path, thumbnail) {
 			isFavourite: false,
 			tiles: [],
 		};
+		tilesFolders.push(foundFolder);
 		logger(`Created new folder for VFX: ${key}`);
 	}
 	const tile = foundFolder.tiles.find((tile) => tile.path === path);

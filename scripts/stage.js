@@ -131,6 +131,53 @@ export class Stage {
 		}
 	}
 
+	addVfx(vfx) {
+		if (vfx) {
+			if (!vfx.pixiOptions) {
+				vfx.pixiOptions = structuredClone(Stage.PIXI_TILE_PRESETS.VFX);
+			}
+			if (!vfx.pixiOptionsRuntime) {
+				vfx.pixiOptionsRuntime = structuredClone(
+					Stage.PIXI_TILE_PRESETS.VFX
+				);
+			}
+		}
+
+		this.vfx.push(vfx);
+	}
+
+	setVfxs(vfxs) {
+		this.vfx = vfxs;
+		if (this.vfx) {
+			this.vfx.forEach((vfx) => {
+				if (!vfx.pixiOptions) {
+					vfx.pixiOptions = structuredClone(
+						Stage.PIXI_TILE_PRESETS.VFX
+					);
+				}
+				if (!vfx.pixiOptionsRuntime) {
+					vfx.pixiOptionsRuntime = structuredClone(
+						Stage.PIXI_TILE_PRESETS.VFX
+					);
+				}
+			});
+		}
+	}
+
+	removeVfx(vfx) {
+		if (vfx) {
+			this.vfx = this.vfx.filter((v) => v.id !== vfx.id);
+		}
+	}
+
+	getVfxById(id) {
+		if (this.vfx) {
+			const filter = this.vfx.filter((v) => v.id === id);
+			return filter.length > 0 ? filter[0] : null;
+		}
+		return null;
+	}
+
 	addLight(light) {
 		if (light) {
 			if (!light.pixiOptions) {
@@ -176,6 +223,7 @@ export class Stage {
 			const filter = this.lights.filter((l) => l.id === id);
 			return filter.length > 0 ? filter[0] : null;
 		}
+		return null;
 	}
 
 	setDarkness(darkness) {
