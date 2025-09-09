@@ -10,6 +10,9 @@ import {
 	addTileFromClipboard,
 	debounce,
 	searchFoldersByName,
+	IS_GM,
+	isImage,
+	isVideo,
 } from './utilities.js';
 import { VFX_TYPES } from './effects.js';
 import { StageManager } from './stage-manager.js';
@@ -579,10 +582,90 @@ export class MindblownUI extends FormApplication {
 		const tileType = evt.item.dataset.tiletype;
 		let folderIndex = evt.item.dataset.folderindex;
 		if (!tileType || !folderIndex) return;
+
 		let draggedIndex = evt.oldIndex;
 		let targetIndex = evt.newIndex;
-
 		let draggedTile = this[tileType][folderIndex].tiles[draggedIndex];
+		if (evt.originalEvent.target.id === CONFIG.FVTT_CANVAS_ID) {
+			// If the drag ended on the canvas, we do not want to do anything
+
+			const [x, y] = [
+				evt.originalEvent.clientX,
+				evt.originalEvent.clientY,
+			];
+			const t = canvas.stage.worldTransform;
+			const pos = { x: 0, y: 0 };
+			pos.x = (x - t.tx) / canvas.stage.scale.x;
+			pos.y = (y - t.ty) / canvas.stage.scale.y;
+			const draggedTile = this[tileType][folderIndex].tiles[draggedIndex];
+			const tileName =
+				draggedTile.name?.replace(/\.[^/.]+$/, '') || 'Unnamed';
+
+			if (tileType === Tile.TileType.NPC) {
+				const actor = game.actors.getName(tileName);
+				if (!actor) {
+					this.chooseTokenSource(draggedTile, pos, tileName);
+				} else {
+					this.addTokenToFoundryCanvas(
+						pos,
+						draggedTile,
+						tileName,
+						actor.prototypeToken.disposition,
+						actor,
+						false
+					);
+				}
+
+				return;
+			} else if (
+				tileType === Tile.TileType.FOCUS ||
+				tileType === Tile.TileType.BG
+			) {
+				let snapped = canvas.grid.getSnappedPosition(pos.x, pos.y);
+				const { width, height } = await getScaledSizeToFitBox(
+					draggedTile.path,
+					250,
+					150
+				);
+				const tileData = {
+					texture: { src: draggedTile.path },
+					width: width,
+					height: height,
+					x: snapped.x,
+					y: snapped.y,
+					hidden: true,
+					flags: {
+						'monks-active-tiles': {
+							active: true,
+							trigger: 'dblclick',
+							actions: [
+								{
+									id: randomID(),
+									action: 'runmacro',
+									data: {
+										macro: 'showOnStage',
+										args: `${tileType},${draggedTile.id}`,
+										entity: {
+											id: 'Macro.qxeL3WF5W9m8AyRk',
+											name: 'showOnStage',
+										},
+										runAsGM: false,
+										runasgm: 'gm',
+									},
+								},
+							],
+						},
+						mindblown: {
+							tileType: tileType,
+							tileId: draggedTile.id,
+						},
+					},
+				};
+				await canvas.scene.createEmbeddedDocuments('Tile', [tileData]);
+				return;
+			}
+		}
+
 		let targetTile = this[tileType][folderIndex].tiles[targetIndex];
 		let targetFolder = this[tileType][folderIndex];
 		let fullList = await this.getUnfilteredList(tileType);
@@ -628,6 +711,312 @@ export class MindblownUI extends FormApplication {
 		fullList.splice(targetIndex, 0, draggedFolder);
 		await Tile.UpdateTilesByType(tileType, fullList);
 		this.updateList(tileType);
+	}
+
+	async showTileFromCanvas(tileId, tileType) {
+		if (!IS_GM() || !tileId || !tileType) return;
+		const tile = await Tile.GetTileById(tileType, tileId);
+		if (!tile) return;
+		const instance = MindblownUI.getInstance();
+		if (tile.paths && tile.paths.length) {
+			const content = `
+					<div id="tile-list" style="max-height: 500px; overflow-y: auto; border: 1px solid #666; padding: 4px;">
+						${tile.paths
+							.map(
+								(a) => `
+							<div class="tile-choice" data-path="${
+								a.path
+							}" style="display: flex; align-items: center; gap: 10px; padding: 4px; cursor: pointer; border: 1px solid transparent;">
+								<div style="width:80px; height: 50px; border-radius: 4px; background: url('${
+									a.thumbnail
+								}') no-repeat; background-size:cover; background-position:center;"></div>
+								<span>${decodeURIComponent(a.path).split('/').pop()}</span>
+							</div>
+						`
+							)
+							.join('')}
+					</div>
+					<input type="hidden" name="tilePath" id="selected-tile-path" />
+					`;
+
+			new Dialog({
+				title: 'Choose Tile Source',
+				content: content,
+				render: (html) => {
+					const $list = html.find('#tile-list');
+					// Highlight selected tile
+					$list.on('click', '.tile-choice', function () {
+						$list
+							.find('.tile-choice')
+							.css('border', '1px solid transparent');
+						$(this).css('border', '1px solid red');
+						html.find('#selected-tile-path').val(
+							$(this).data('path')
+						);
+					});
+				},
+				buttons: {
+					ok: {
+						label: 'Choose Tile',
+						callback: async (html) => {
+							const selectedTilePath = html
+								.find('#selected-tile-path')
+								.val();
+							if (!selectedTilePath) {
+								ui.notifications.warn('No tile selected.');
+								return;
+							}
+							const selectedPath = tile.paths.find(
+								(t) => t.path === selectedTilePath
+							);
+
+							if (selectedPath) {
+								tile.path = selectedPath.path;
+								tile.thumbnail = selectedPath.thumbnail;
+								tile.mediaType = selectedPath.path
+									? isImage(selectedPath.path)
+										? Tile.MediaType.IMAGE
+										: isVideo(selectedPath.path)
+										? Tile.MediaType.VIDEO
+										: Tile.MediaType.PIXIVFX
+									: null;
+								await Tile.UpdateTilesByType(
+									tileType,
+									instance[tileType]
+								);
+								await instance.updateList(tileType);
+								instance.doShowTileFromCanvas(tile, tileType);
+							} else {
+								ui.notifications.error(
+									'Selected tile not found.'
+								);
+							}
+						},
+					},
+					cancel: {
+						label: 'Cancel',
+					},
+				},
+				default: 'ok',
+				close: (html) => {
+					// Cleanup if needed
+				},
+			}).render(true);
+		} else {
+			instance.doShowTileFromCanvas(tile, tileType);
+		}
+	}
+
+	async doShowTileFromCanvas(tile, tileType) {
+		if (tileType === Tile.TileType.BG) {
+			StageManager.shared().setBg(tile);
+		} else if (tileType === Tile.TileType.FOCUS) {
+			StageManager.shared().setFocus(tile);
+		} else if (tileType === Tile.TileType.NPC) {
+			StageManager.shared().setNpc(tile);
+		}
+	}
+
+	async chooseTokenSource(draggedTile, pos, tileName) {
+		const pack = game.packs.get('world.ddb-aetherium-ddb-monsters');
+		const actors = await pack.getIndex();
+
+		new Dialog({
+			title: 'Choose Token Source',
+			content: `
+				<form>
+					<div class="form-group">
+						<label>Disposition:</label>
+						<select id="token-disposition" name="disposition">
+							<option value="1">Friendly</option>
+							<option value="0" selected>Neutral</option>
+							<option value="-1">Hostile</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label>Search Actor:</label>
+						<input type="text" id="actor-search" style="width:100%;" placeholder="Search..." />
+					</div>
+					<div id="actor-list" style="max-height: 300px; overflow-y: auto; border: 1px solid #666; padding: 4px;">
+						${actors
+							.map(
+								(a) => `
+							<div class="actor-choice" data-id="${a._id}" style="display: flex; align-items: center; gap: 10px; padding: 4px; cursor: pointer; border: 1px solid transparent;">
+								<img src="${a.img}" width="40" height="40" style="object-fit: cover; border-radius: 4px;" />
+								<span>${a.name}</span>
+							</div>
+						`
+							)
+							.join('')}
+					</div>
+					<input type="hidden" name="actorId" id="selected-actor-id" />
+				</form>
+			`,
+			render: (html) => {
+				const $search = html.find('#actor-search');
+				const $list = html.find('#actor-list');
+
+				// Highlight selected actor
+				$list.on('click', '.actor-choice', function () {
+					$list
+						.find('.actor-choice')
+						.css('border', '1px solid transparent');
+					$(this).css('border', '1px solid red');
+					html.find('#selected-actor-id').val($(this).data('id'));
+				});
+
+				// Search filter
+				$search.on('input', function () {
+					const query = $(this).val().toLowerCase();
+					$list.children().each(function () {
+						const name = $(this).text().toLowerCase();
+						$(this).toggle(name.includes(query));
+					});
+				});
+			},
+			buttons: {
+				ok: {
+					label: 'Create Token',
+					callback: async (html) => {
+						const disposition = parseInt(
+							html.find('#token-disposition').val()
+						);
+						const actorId = html.find('[name="actorId"]').val();
+						if (!actorId)
+							return ui.notifications.warn('No actor selected.');
+						const actorDoc = await pack.getDocument(actorId);
+						if (
+							disposition !== undefined &&
+							actorDoc !== undefined
+						) {
+							this.addTokenToFoundryCanvas(
+								pos,
+								draggedTile,
+								tileName,
+								disposition,
+								actorDoc
+							);
+						}
+					},
+					icon: '<i class="fas fa-check"></i>',
+				},
+				cancel: {
+					label: 'Cancel',
+					icon: '<i class="fas fa-times"></i>',
+				},
+			},
+			default: 'ok',
+		}).render(true);
+	}
+
+	async addTokenToFoundryCanvas(
+		pos,
+		draggedTile,
+		tileName,
+		disposition,
+		_dummyActor = 'Dummy Soldier',
+		isDummy = true
+	) {
+		let snapped = canvas.grid.getSnappedPosition(pos.x, pos.y);
+
+		if (isDummy) {
+			// Check if the dummy actor exists
+			if (!_dummyActor) {
+				ui.notifications.error(
+					`Dummy actor "${_dummyActor.name}" not found.`
+				);
+				return;
+			}
+
+			const actorData = foundry.utils.duplicate(_dummyActor.toObject());
+
+			// Remove problematic fields
+			delete actorData._id;
+			delete actorData.folder;
+			delete actorData.sort;
+			delete actorData._sourceId;
+			if (actorData.items) {
+				for (let item of actorData.items) delete item._id;
+			}
+			if (actorData.effects) {
+				for (let effect of actorData.effects) delete effect._id;
+			}
+
+			actorData.name = tileName;
+			actorData.img = draggedTile.path;
+			actorData.prototypeToken.texture.src = draggedTile.path;
+			actorData.flags = {
+				mindblown: {
+					tileId: draggedTile.id, // You’ll set this dynamically
+					tileType: Tile.TileType.NPC, // Assuming this is a NPC tile
+				},
+			};
+
+			// optional: override disposition, scale, etc.
+			const actor = await Actor.create(actorData);
+
+			// Create token data
+
+			if (
+				game.modules.get('vtta-tokenizer')?.active &&
+				window.Tokenizer &&
+				actor
+			) {
+				// Launch VTTA Tokenizer and after image change, update all linked tokens on current scene
+				const originalSrc = actor.prototypeToken.texture.src;
+				window.Tokenizer.tokenizeActor(actor);
+				const checkInterval = setInterval(async () => {
+					const freshActor = game.actors.get(actor.id);
+					const updatedSrc = freshActor.prototypeToken.texture.src;
+
+					if (originalSrc !== updatedSrc) {
+						clearInterval(checkInterval);
+						console.log(
+							'Actor token image changed. Updating tokens...'
+						);
+
+						const tokenData = {
+							...foundry.utils.duplicate(
+								actor.prototypeToken.toObject()
+							),
+							name: tileName,
+							x: snapped.x,
+							y: snapped.y,
+							hidden: true,
+							disposition: disposition || 0, // Default to neutral if not specified
+							actorId: actor.id,
+							actorLink: true,
+						};
+
+						const createdTokens =
+							await canvas.scene.createEmbeddedDocuments(
+								'Token',
+								[tokenData]
+							);
+
+						// const token = canvas.tokens.get(createdTokens[0].id);
+						// token.document.update({ actorId: actor.id, hidden: true, x: snapped.x, y: snapped.y });
+					}
+				}, 1000);
+
+				// Optional timeout to stop polling
+				setTimeout(() => clearInterval(checkInterval), 60000);
+			}
+		} else {
+			const tokenData = {
+				...foundry.utils.duplicate(
+					_dummyActor.prototypeToken.toObject()
+				),
+				name: tileName,
+				x: snapped.x,
+				y: snapped.y,
+				hidden: true,
+				disposition: disposition || 0, // Default to neutral if not specified
+				actorId: _dummyActor.id,
+				actorLink: true,
+			};
+			await canvas.scene.createEmbeddedDocuments('Token', [tokenData]);
+		}
 	}
 
 	async activateListeners() {
@@ -720,7 +1109,7 @@ export class MindblownUI extends FormApplication {
 			} else if (type === Tile.MediaType.VIDEO) {
 				content = `<video src="${src}" autoplay muted loop class="media-content" style="width:100%; height: auto;"></video>`;
 			}
-			if(name){
+			if (name) {
 				content += `<div class="media-name">${name}</div>`;
 			}
 			if (content && content.length > 0) {
@@ -938,6 +1327,7 @@ export class MindblownUI extends FormApplication {
 			'click',
 			'.mindblown-panel-container .mindblown-grid-item',
 			function (event) {
+				const $target = $(event.currentTarget);
 				showOnStage(event);
 			}
 		);
@@ -1119,6 +1509,49 @@ export class MindblownUI extends FormApplication {
 					} else {
 						actualTile[preset] = null;
 						$target.addClass('off');
+					}
+				}
+			}
+		);
+
+		$mindblown.on(
+			'click',
+			'.accordion-container .accordion-data-item .accordion-data-item-alts',
+			async function (event) {
+				event.preventDefault();
+				event.stopImmediatePropagation();
+				const instance = MindblownUI.getInstance();
+				const $target = $(event.currentTarget);
+				let $item = $target.closest('.accordion-data-item');
+				const tileType = $item.attr('data-tiletype');
+				const tileId = $item.attr('data-tileId');
+
+				const actualTile = await Tile.GetTileById(
+					tileType,
+					tileId,
+					instance.bgs
+				);
+
+				if (actualTile) {
+					let index = actualTile.paths.findIndex(
+						(pathObj) => pathObj.path === actualTile.path
+					);
+
+					if (index > -1) {
+						index = (index + 1) % actualTile.paths.length;
+						const _path = actualTile.paths[index].path;
+						actualTile.path = _path;
+						actualTile.mediaType = _path
+							? isImage(_path)
+								? Tile.MediaType.IMAGE
+								: isVideo(_path)
+								? Tile.MediaType.VIDEO
+								: Tile.MediaType.PIXIVFX
+							: null;
+						actualTile.thumbnail =
+							actualTile.paths[index].thumbnail;
+						await Tile.UpdateTilesByType(tileType, instance.bgs);
+						instance.updateList(tileType);
 					}
 				}
 			}

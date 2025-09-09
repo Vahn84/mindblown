@@ -29,7 +29,14 @@ export async function syncMediaDirectory(dirCode, tileType) {
 	logger('syncMediaDirectory', directoryPath);
 	logger('tileType', tileType);
 	let folders = await FilePicker.browse('data', directoryPath);
-	const tilesFolders = game.user.getFlag(CONFIG.MOD_NAME, tileType) || {};
+	let tilesFolders = game.user.getFlag(CONFIG.MOD_NAME, tileType) || {};
+	if (!tilesFolders || !Array.isArray(tilesFolders)) {
+		tilesFolders = [];
+		logger(
+			`No existing ${tileType} folders found, initializing empty array.`
+		);
+	}
+
 	for (let index in tilesFolders) {
 		let folder = tilesFolders[index];
 		for (var i = 0; i < folder.tiles.length; i++) {
@@ -63,6 +70,170 @@ export async function syncMediaDirectory(dirCode, tileType) {
 		)) {
 			let dir = await FilePicker.browse('data', subFolder);
 			logger('FilePicker response for subfolder:', dir);
+			let category = decodeURIComponent(dir.target).split('/').pop();
+			let foundFolder;
+			if (tilesFolders && tilesFolders.length) {
+				foundFolder = tilesFolders.find(
+					(folder) => folder.name === category
+				);
+			}
+			if (!foundFolder) {
+				foundFolder = {
+					name: category,
+					isActive: false,
+					isFavourite: false,
+					tiles: [],
+					id: category,
+				};
+				tilesFolders.push(foundFolder);
+			}
+			if (dir.target && dir.dirs.length) {
+				for (const subSubFolder of dir.dirs.filter(
+					(subDir) => !subDir.includes('%40eaDir')
+				)) {
+					let subDir = await FilePicker.browse('data', subSubFolder);
+					logger('FilePicker response for sub-subfolder:', subDir);
+					let tileName = decodeURIComponent(subDir.target)
+						.split('/')
+						.pop();
+
+					const paths = subDir.files.filter(
+						(file) =>
+							file.endsWith('.png') ||
+							file.endsWith('.jpg') ||
+							file.endsWith('.webp') ||
+							file.endsWith('.mp4') ||
+							file.endsWith('.webm')
+					);
+
+					let tileFolder = foundFolder.tiles.find(
+						(_tile) => _tile?.name === tileName
+					);
+					let tileFolderFound = true;
+					if (!tileFolder) {
+						tileFolder = new Tile(
+							tileName,
+							subDir.target,
+							tileType,
+							true,
+							true,
+							category
+						);
+						tileFolderFound = false;
+					}
+
+					if (tileFolder.paths && tileFolder.paths.length) {
+						// Remove paths that no longer exist
+						const validPaths = tileFolder.paths.filter((pathObj) =>
+							UrlExists(pathObj.path)
+						);
+
+						if (validPaths.length === 0) {
+							logger(
+								`Removed tile with alts ${tileFolder.name} because it has no valid paths`
+							);
+							foundFolder.tiles.splice(
+								foundFolder.tiles.indexOf(tileFolder),
+								1
+							);
+							continue;
+						} else {
+							const removed = tileFolder.paths.filter(
+								(o) => !validPaths.some((f) => f.id === o.id)
+							);
+							if (removed.length > 0) {
+								logger(
+									`Removed paths from tile with alts ${
+										tileFolder.name
+									}: ${removed.map((o) => o.path).join(', ')}`
+								);
+							}
+							tileFolder.paths = validPaths;
+						}
+
+						const newItems = paths.filter((p) => {
+							return !tileFolder.paths.some(
+								(pathObj) => pathObj.path === p
+							);
+						});
+
+						if (newItems.length > 0) {
+							for (const path of newItems) {
+								let _path = {
+									path,
+									thumbnail: path,
+								};
+								let thumb = await createThumbnail(path, {
+									width: 500,
+									height: 500,
+									center:
+										Tile.TileType.NPC === tileType
+											? false
+											: true,
+									ty: 0,
+								});
+
+								if (thumb) {
+									_path.thumbnail = thumb;
+									tileFolder.paths.push(_path);
+								}
+							}
+						}
+					} else if (paths && paths.length) {
+						let _paths = [];
+						for (const path of paths) {
+							let _path = {
+								path,
+								thumbnail: path,
+							};
+							let thumb = await createThumbnail(path, {
+								width: 500,
+								height: 500,
+								center:
+									Tile.TileType.NPC === tileType
+										? false
+										: true,
+								ty: 0,
+							});
+
+							if (thumb) {
+								_path.thumbnail = thumb;
+								_paths.push(_path);
+							}
+						}
+						tileFolder.paths = _paths;
+					}
+
+					if (tileFolder.paths.length && !tileFolderFound) {
+						newDataCount++;
+						foundFolder.tiles.push(tileFolder);
+						logger(
+							`Added new tile with alts ${tileFolder.name} to ${category}`
+						);
+					} else if (!tileFolder.paths.length) {
+						continue;
+					}
+
+					tileFolder.thumbnail =
+						tileFolder.paths[0]?.thumbnail || tileFolder.path;
+					if (tileFolder.setPath) {
+						tileFolder.setPath(
+							tileFolder.paths[0]?.path || tileFolder.path
+						);
+					} else {
+						tileFolder.path =
+							tileFolder.paths[0]?.path || tileFolder.path;
+
+						tileFolder.mediaType = tileFolder.path
+							? isImage(tileFolder.path)
+								? Tile.MediaType.IMAGE
+								: isVideo(tileFolder.path)
+								? Tile.MediaType.VIDEO
+								: Tile.MediaType.PIXIVFX
+							: null;
+					}
+				}
+			}
 
 			if (dir.target && dir.files.length) {
 				for (const path of dir.files.filter(
@@ -73,23 +244,6 @@ export async function syncMediaDirectory(dirCode, tileType) {
 						file.endsWith('.mp4') ||
 						file.endsWith('.webm')
 				)) {
-					let category = decodeURIComponent(dir.target)
-						.split('/')
-						.pop();
-					let foundFolder = tilesFolders.find(
-						(folder) => folder.name === category
-					);
-					if (!foundFolder) {
-						foundFolder = {
-							name: category,
-							isActive: false,
-							isFavourite: false,
-							tiles: [],
-							id: category,
-						};
-						tilesFolders.push(foundFolder);
-					}
-
 					if (
 						!foundFolder.tiles.find((_tile) => _tile?.path === path)
 					) {

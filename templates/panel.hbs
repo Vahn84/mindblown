@@ -42,7 +42,9 @@
               {{#ifEquals ../../../panelType "LIGHT"}}
                 <i class="fa-regular {{tile.icon}}"></i>
               {{/ifEquals}}
-              
+              {{#ifEquals ../../../panelType "NPC"}}
+              <div class="mindblown-context-menu" >SEND TO CANVAS</div>
+              {{/ifEquals}}
             </div>
             {{/each}}
           </div>

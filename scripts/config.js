@@ -5,6 +5,7 @@ export default {
 	DEBUG: true,
 	MOD_PATH: 'modules/mindblown',
 	MOD_NAME: 'mindblown',
+	BASE_HOST: 'https://foundryvtt.vahnoftheart.synology.com/',
 	TEMPLATES: {
 		MINDBLOWN: 'modules/mindblown/templates/mindblown-ui.hbs',
 		PANEL: 'modules/mindblown/templates/panel.hbs',
@@ -43,8 +44,10 @@ export default {
 	},
 	DEFAULT_SPRITE_FRAME: 'modules/mindblown/assets/textures/grey_frame.png',
 	DEFAULT_SPRITE_BG: 'modules/mindblown/assets/textures/black-bg.png',
+	TRANSPARENT_BG: 'modules/mindblown/assets/textures/transparent-bg.webp',
 	CURRENT_STAGE: 'currentStage',
 	STAGE_PRESETS: 'stagePresets',
 	DOCK_REDUCED: 'dockReduced',
-
+	TOKEN_FRAME:
+		'modules/vtta-tokenizer/img/thegreatnacho/theGreatNacho-13.webp',
 };

@@ -525,6 +525,21 @@ canvas#mbCanvas.hidden {
 	.accordion-container
 	.accordion-item.active
 	.accordion-data
+	.accordion-data-item
+	.accordion-data-item-alts {
+	display: flex;
+	height: auto;
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	padding: 5px;
+}
+
+.mindblown-ui
+	.horizontal-accordion-one
+	.accordion-container
+	.accordion-item.active
+	.accordion-data
 	.horizontal-accordion-one
 	.accordion-container
 	.accordion-item.deactivate
@@ -570,6 +585,21 @@ canvas#mbCanvas.hidden {
 }
 
 .media-tooltip.active {
+	display: flex;
+}
+
+.mindblown-context-menu {
+	position: absolute;
+	z-index: 9999;
+	background: rgba(0, 0, 0, 0.8);
+	border: 1px solid #444;
+	border-radius: 6px;
+	padding: 8px;
+	display: none;
+	flex-direction: column;
+}
+
+.mindblown-context-menu.active {
 	display: flex;
 }
 
@@ -916,6 +946,7 @@ canvas#mbCanvas.hidden {
 }
 
 .mindblown-grid-item {
+	pointer-events: auto;
 	background-size: cover;
 	background-position: center;
 	aspect-ratio: 1 / 1;

@@ -12,6 +12,11 @@ import { Light } from './light.js';
 
 Hooks.on('ready', () => {
 	console.log('Mindblown ready');
+
+	game.modules.get(CONFIG.MOD_NAME).api = {
+		showTileFromCanvas: MindblownUI.getInstance().showTileFromCanvas,
+	};
+
 	game.socket.on(`module.${CONFIG.MOD_NAME}`, (data) => {
 		StageManager.shared().SocketSetStageByAction(data);
 	});
@@ -23,7 +28,6 @@ Hooks.on('ready', () => {
 	if (!lights) {
 		game.user.setFlag(CONFIG.MOD_NAME, Tile.TileType.LIGHT, Light.LIST);
 	}
-
 
 	if ($('#taskbar').length > 0) {
 		const trpTaskbar = $('#taskbar');
@@ -82,6 +86,32 @@ Hooks.on('updateScene', (scene, changes) => {
 		console.log('Darkness changed to', changes?.environment?.darknessLevel);
 		StageManager.shared().setDarkness(changes?.environment?.darknessLevel);
 	}
+});
+
+Hooks.on('renderActorSheet', (app, html, data) => {
+	const actor = app.actor;
+	if (!IS_GM() || !actor) return;
+
+	const tileId = actor.getFlag('mindblown', 'tileId');
+	const tileType = actor.getFlag('mindblown', 'tileType');
+
+	if (!tileId || !tileType) return;
+
+	// Add a button only if the flag exists
+	const button = $(
+		`<a class="header-button control mindblown-show-on-stage"><i class="fas fa-spa"></i></a>`
+	);
+	button.on('click', (e) => {
+		e.preventDefault();
+		game.modules
+			.get('mindblown')
+			?.api?.showTileFromCanvas(tileId, tileType);
+	});
+
+	// Append the button somewhere nice — e.g., top of sheet
+	html.closest('.app.sheet')
+		.find('.window-header .close')
+		.before(button);
 });
 
 Hooks.on('getSceneControlButtons', (controls) => {

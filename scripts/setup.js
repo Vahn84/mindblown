@@ -153,6 +153,17 @@ export async function setupModule() {
 			return searchValue;
 		});
 
+		Handlebars.registerHelper(
+			'ifPathsGreaterThan',
+			function (paths, number, options) {
+				if (paths && paths.length > number) {
+					return options.fn(this);
+				} else {
+					return options.inverse(this);
+				}
+			}
+		);
+		
 		Handlebars.registerHelper('panelIcon', function (panelType) {
 			switch (panelType) {
 				case Tile.TileType.NPC:

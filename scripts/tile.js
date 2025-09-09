@@ -41,6 +41,21 @@ export class Tile {
 		this.isFavourite = false;
 	}
 
+	setPath(path) {
+		if (!path) {
+			logger('Tile.setPath: path is null or undefined');
+			return;
+		}
+		this.path = path;
+		this.mediaType = this.path
+			? isImage(this.path)
+				? Tile.MediaType.IMAGE
+				: isVideo(this.path)
+				? Tile.MediaType.VIDEO
+				: Tile.MediaType.PIXIVFX
+			: null;
+	}
+
 	/**
 	 * @param {String} id
 	 */

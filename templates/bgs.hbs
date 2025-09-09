@@ -65,7 +65,13 @@
               <i class="fa-solid fa-lightbulb"></i>
             </div>
           {{/if}}
+
         </div>
+        {{#ifPathsGreaterThan tile.paths 1}}
+            <div class="accordion-data-item-alts">
+              <i class="fa-regular fa-layer-group"></i>
+            </div>
+        {{/ifPathsGreaterThan}}
         <div class="media-tooltip"></div>
         </div>
       {{/each}}
