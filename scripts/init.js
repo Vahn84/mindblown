@@ -109,9 +109,7 @@ Hooks.on('renderActorSheet', (app, html, data) => {
 	});
 
 	// Append the button somewhere nice — e.g., top of sheet
-	html.closest('.app.sheet')
-		.find('.window-header .close')
-		.before(button);
+	html.closest('.app.sheet').find('.window-header .close').before(button);
 });
 
 Hooks.on('getSceneControlButtons', (controls) => {
@@ -119,13 +117,13 @@ Hooks.on('getSceneControlButtons', (controls) => {
 	if (!game.user.isGM) {
 		return;
 	}
-	controls.push({
+	controls[CONFIG.MOD_NAME] = {
 		name: 'mindblown',
 		title: 'Mindblown UI',
 		icon: 'fas fa-spa', // Use any FontAwesome icon
 		layer: 'controls', // optional unless you have a custom layer
-		tools: [
-			{
+		tools: {
+			'open-ui':{
 				name: 'open-ui',
 				title: 'Open Mindblown UI',
 				icon: 'fas fa-window',
@@ -134,7 +132,7 @@ Hooks.on('getSceneControlButtons', (controls) => {
 				},
 				button: true,
 			},
-			{
+			'ambient-lighting':{
 				name: 'ambient-lighting',
 				title: 'Toggle Ambient Lighting',
 				icon: 'fas fa-lightbulb',
@@ -147,7 +145,7 @@ Hooks.on('getSceneControlButtons', (controls) => {
 					CONFIG.AMBIENT_LIGHTING_ENABLED
 				),
 			},
-			{
+			'hide-gm-stage':{
 				name: 'hide-gm-stage',
 				title: 'Hide Stage for GM',
 				icon: 'fas fa-square-minus',
@@ -169,7 +167,7 @@ Hooks.on('getSceneControlButtons', (controls) => {
 					CONFIG.HIDDEN_STAGE_FOR_GM
 				),
 			},
-			{
+			'hide-players-stage': {
 				name: 'hide-players-stage',
 				title: 'Hide Stage for Players',
 				icon: 'fas fa-eye-slash',
@@ -191,7 +189,7 @@ Hooks.on('getSceneControlButtons', (controls) => {
 					CONFIG.HIDDEN_STAGE_FOR_PLAYERS
 				),
 			},
-			{
+			'end-stream': {
 				name: 'end-stream',
 				title: 'End Stream',
 				icon: 'fas fa-power-off',
@@ -200,7 +198,7 @@ Hooks.on('getSceneControlButtons', (controls) => {
 				},
 				button: true,
 			},
-			{
+			'force-stream': {
 				name: 'force-stream',
 				title: 'Force Stream',
 				icon: 'fas fa-plug',
@@ -209,7 +207,7 @@ Hooks.on('getSceneControlButtons', (controls) => {
 				},
 				button: true,
 			},
-			{
+			'reset-bg': {
 				name: 'reset-bg',
 				title: 'Reset Background',
 				icon: 'fas fa-eraser',
@@ -218,7 +216,7 @@ Hooks.on('getSceneControlButtons', (controls) => {
 				},
 				button: true,
 			},
-			{
+			'sync-folders': {
 				name: 'sync-folders',
 				title: 'Sync Media Folders',
 				icon: 'fas fa-arrows-rotate',
@@ -227,6 +225,6 @@ Hooks.on('getSceneControlButtons', (controls) => {
 				},
 				button: true,
 			},
-		],
-	});
+		},
+	};
 });
