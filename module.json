@@ -22,11 +22,6 @@
 				"compatibility": {}
 			},
 			{
-				"id": "tagger",
-				"type": "module",
-				"compatibility": {}
-			},
-			{
 				"id": "tokenmagic",
 				"type": "module",
 				"compatibility": {}
@@ -60,7 +55,7 @@
 		"scripts/effects.js"
 	],
 	"url": "https://github.com/Vahn84/mindblown",
-	"manifest": "https://raw.githubusercontent.com/Vahn84/mindblown/master/module.json",
+	"manifest": "https://raw.githubusercontent.com/Vahn84/mindblown/master/module.json?v=1",
 
 	"media": []
 }
