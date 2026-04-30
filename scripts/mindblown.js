@@ -1101,7 +1101,7 @@ export class MindblownUI extends FormApplication {
 			const $target = $(event.target);
 			const type = $target.data('mediatype');
 			const src = $target.data('src');
-			const name = $target.data('name');
+			const name = decodeURIComponent(src).split('/').pop();
 
 			let content = '';
 			if (type === Tile.MediaType.IMAGE) {

@@ -1,6 +1,5 @@
 {
 	"id": "mindblown",
-	"name": "mindblown",
 	"title": "Mindblown",
 	"description": "A module that expands theater of the mind implementations in Foundry VTT.",
 
@@ -10,10 +9,10 @@
 		}
 	],
 	"socket": true,
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"compatibility": {
-		"minimum": "10",
-		"verified": "13.348"
+		"minimum": "14",
+		"verified": "14.360"
 	},
 	"relationships": {
 		"requires": [
