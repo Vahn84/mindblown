@@ -65,7 +65,7 @@
 		"scripts/effects.js"
 	],
 	"url": "https://github.com/Vahn84/mindblown",
-	"manifest": "https://github.com/Vahn84/mindblown/blob/master/module.json",
+	"manifest": "https://raw.githubusercontent.com/Vahn84/mindblown/master/module.json",
 
 	"media": []
 }
