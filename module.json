@@ -19,10 +19,7 @@
 			{
 				"id": "lib-wrapper",
 				"type": "module",
-				"compatibility": {
-					"minimum": "1.0.0.0",
-					"verified": "1.12.6.0"
-				}
+				"compatibility": {}
 			},
 			{
 				"id": "tagger",
@@ -32,9 +29,7 @@
 			{
 				"id": "tokenmagic",
 				"type": "module",
-				"compatibility": {
-					"verified": "0.6.8"
-				}
+				"compatibility": {}
 			}
 		]
 	},
